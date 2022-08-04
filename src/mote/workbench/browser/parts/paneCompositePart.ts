@@ -1,13 +1,15 @@
-import { IPaneComposite } from "mote/workbench/common/panecomposite";
-import { ViewContainerLocation } from "mote/workbench/common/views";
+import { ActivitybarPart } from 'mote/workbench/browser/parts/activitybar/activitybarPart';
+import { IPaneComposite } from 'mote/workbench/common/panecomposite';
+import { ViewContainerLocation } from 'mote/workbench/common/views';
+import { IBadge } from 'mote/workbench/services/activity/common/activity';
 import { IPaneCompositePartService } from "mote/workbench/services/panecomposite/browser/panecomposite";
-import { Disposable } from "vs/base/common/lifecycle";
+import { Disposable, IDisposable } from "vs/base/common/lifecycle";
 import { assertIsDefined } from "vs/base/common/types";
 import { registerSingleton } from "vs/platform/instantiation/common/extensions";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { ILogService } from "vs/platform/log/common/log";
 import { PaneCompositeDescriptor } from "../panecomposite";
-import { SidebarPart } from "./sidebar/sidebarPart";
+import { SidebarPart } from './sidebar/sidebarPart';
 
 export interface IPaneCompositePart {
 
@@ -27,10 +29,28 @@ export interface IPaneCompositePart {
 	getPaneComposites(): PaneCompositeDescriptor[];
 }
 
+export interface IPaneCompositeSelectorPart {
+	/**
+	 * Returns id of pinned view containers following the visual order.
+	 */
+	getPinnedPaneCompositeIds(): string[];
+
+	/**
+	 * Returns id of visible view containers following the visual order.
+	 */
+	getVisiblePaneCompositeIds(): string[];
+
+	/**
+	 * Show an activity in a viewlet.
+	 */
+	showActivity(id: string, badge: IBadge, clazz?: string, priority?: number): IDisposable;
+}
+
 export class PaneCompositeParts extends Disposable implements IPaneCompositePartService {
 	declare readonly _serviceBrand: undefined;
 
 	private paneCompositeParts = new Map<ViewContainerLocation, IPaneCompositePart>();
+	private paneCompositeSelectorParts = new Map<ViewContainerLocation, IPaneCompositeSelectorPart>();
 
 	constructor(
 		@ILogService private logService: ILogService,
@@ -39,8 +59,11 @@ export class PaneCompositeParts extends Disposable implements IPaneCompositePart
 		super();
 
 		const sideBarPart = instantiationService.createInstance(SidebarPart);
+		const activityBarPart = instantiationService.createInstance(ActivitybarPart, sideBarPart);
 
 		this.paneCompositeParts.set(ViewContainerLocation.Sidebar, sideBarPart);
+
+		this.paneCompositeSelectorParts.set(ViewContainerLocation.Sidebar, activityBarPart);
 	}
 
 	openPaneComposite(id: string | undefined, viewContainerLocation: ViewContainerLocation, focus?: boolean): Promise<IPaneComposite | undefined> {

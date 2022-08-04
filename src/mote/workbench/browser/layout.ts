@@ -36,6 +36,8 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 	private initialized = false;
 	private workbenchGrid!: SerializableGrid<ISerializableView>;
 
+	private activityBarPartView!: ISerializableView;
+
 	protected logService!: ILogService;
 
 	//#region workbench services
@@ -93,8 +95,12 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 	protected createWorkbenchLayout(): void {
 		const sideBar = this.getPart(Parts.SIDEBAR_PART);
 		const editorPart = this.getPart(Parts.EDITOR_PART);
+		const activityBar = this.getPart(Parts.ACTIVITYBAR_PART);
+
+		this.activityBarPartView = activityBar;
 
 		const viewMap: { [key: string]: Part } = {
+			[Parts.ACTIVITYBAR_PART]: activityBar,
 			[Parts.SIDEBAR_PART]: sideBar,
 			[Parts.EDITOR_PART]: editorPart,
 		};
@@ -189,6 +195,14 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 
 		const titleBarHeight = 0;
 		const middleSectionHeight = height - titleBarHeight;
+		const activityBarWidth = this.activityBarPartView.minimumWidth;
+
+		const activityBarNode: ISerializedLeafNode = {
+			type: 'leaf',
+			data: { type: Parts.ACTIVITYBAR_PART },
+			size: activityBarWidth,
+			visible: true,
+		};
 
 		const sideBarNode: ISerializedLeafNode = {
 			type: 'leaf',
@@ -205,7 +219,7 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 		};
 
 
-		const middleSection: ISerializedNode[] = [sideBarNode, editorNode];
+		const middleSection: ISerializedNode[] = [activityBarNode, sideBarNode, editorNode];
 
 		const result: ISerializedGrid = {
 			root: {

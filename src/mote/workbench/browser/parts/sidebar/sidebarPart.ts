@@ -13,9 +13,6 @@ import { ILogService } from "vs/platform/log/common/log";
 import { Registry } from "vs/platform/registry/common/platform";
 
 export class SidebarPart extends CompositePart<PaneComposite> implements IPaneCompositePart {
-	toJSON(): object {
-		throw new Error("Method not implemented.");
-	}
 
 	declare readonly _serviceBrand: undefined;
 
@@ -125,5 +122,11 @@ export class SidebarPart extends CompositePart<PaneComposite> implements IPaneCo
 
 			return v1.order - v2.order;
 		});
+	}
+
+	toJSON(): object {
+		return {
+			type: Parts.SIDEBAR_PART
+		};
 	}
 }
