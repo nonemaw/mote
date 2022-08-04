@@ -218,7 +218,6 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 			visible: true
 		};
 
-
 		const middleSection: ISerializedNode[] = [activityBarNode, sideBarNode, editorNode];
 
 		const result: ISerializedGrid = {

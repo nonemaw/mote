@@ -97,6 +97,7 @@ export class Workbench extends Layout {
 
 		// Create Parts
 		[
+			{ id: Parts.ACTIVITYBAR_PART, role: 'none', classes: ['activitybar', 'left'] },
 			{ id: Parts.SIDEBAR_PART, role: 'none', classes: ['sidebar', 'left'], options: {} },
 			{ id: Parts.EDITOR_PART, role: 'main', classes: ['editor'], options: {} }
 		].forEach(({ id, role, classes, options }) => {

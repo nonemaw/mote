@@ -145,6 +145,10 @@ export const ThemedStyles = {
 		light: "rgb(247, 246, 243)",
 		dark: 'rgb(37,37,38)',
 	},
+	activityBackground: {
+		light: "rgb(247, 246, 243)",
+		dark: 'rgb(51, 51, 51)',
+	},
 	sidebarSwitcherFooterBackground: {
 		light: "#FBFAF9",
 		dark: "#404447"

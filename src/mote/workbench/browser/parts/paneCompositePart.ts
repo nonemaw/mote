@@ -2,14 +2,14 @@ import { ActivitybarPart } from 'mote/workbench/browser/parts/activitybar/activi
 import { IPaneComposite } from 'mote/workbench/common/panecomposite';
 import { ViewContainerLocation } from 'mote/workbench/common/views';
 import { IBadge } from 'mote/workbench/services/activity/common/activity';
-import { IPaneCompositePartService } from "mote/workbench/services/panecomposite/browser/panecomposite";
-import { Disposable, IDisposable } from "vs/base/common/lifecycle";
-import { assertIsDefined } from "vs/base/common/types";
-import { registerSingleton } from "vs/platform/instantiation/common/extensions";
-import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
-import { ILogService } from "vs/platform/log/common/log";
-import { PaneCompositeDescriptor } from "../panecomposite";
-import { SidebarPart } from './sidebar/sidebarPart';
+import { IPaneCompositePartService } from 'mote/workbench/services/panecomposite/browser/panecomposite';
+import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
+import { assertIsDefined } from 'vs/base/common/types';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import { ILogService } from 'vs/platform/log/common/log';
+import { PaneCompositeDescriptor } from 'mote/workbench/browser/panecomposite';
+import { SidebarPart } from 'mote/workbench/browser/parts/sidebar/sidebarPart';
 
 export interface IPaneCompositePart {
 
@@ -17,6 +17,11 @@ export interface IPaneCompositePart {
 	 * Opens a viewlet with the given identifier and pass keyboard focus to it if specified.
 	 */
 	openPaneComposite(id: string | undefined, focus?: boolean): Promise<IPaneComposite | undefined>;
+
+	/**
+	 * Returns the current active viewlet if any.
+	 */
+	getActivePaneComposite(): IPaneComposite | undefined;
 
 	/**
 	 * Returns the viewlet by id.

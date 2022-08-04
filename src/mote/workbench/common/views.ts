@@ -566,6 +566,7 @@ export interface IViewDescriptorService {
 	getDefaultViewContainer(location: ViewContainerLocation): ViewContainer | undefined;
 	getViewContainerById(id: string): ViewContainer | null;
 	getViewContainerLocation(viewContainer: ViewContainer): ViewContainerLocation | null;
+	getViewContainersByLocation(location: ViewContainerLocation): ViewContainer[];
 	getViewContainerModel(viewContainer: ViewContainer): IViewContainerModel;
 }
 

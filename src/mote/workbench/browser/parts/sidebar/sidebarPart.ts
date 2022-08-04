@@ -73,6 +73,12 @@ export class SidebarPart extends CompositePart<PaneComposite> implements IPaneCo
 		container.style.backgroundColor = ThemedStyles.sidebarBackground.dark;
 	}
 
+	//#region Viewlet service
+
+	getActivePaneComposite(): IPaneComposite | undefined {
+		return <IPaneComposite>this.getActiveComposite();
+	}
+
 	async openPaneComposite(id: string | undefined, focus?: boolean): Promise<IPaneComposite | undefined> {
 		this.logService.debug(`[SidebarPart] openPaneComposite: <${id}>`);
 
@@ -123,6 +129,8 @@ export class SidebarPart extends CompositePart<PaneComposite> implements IPaneCo
 			return v1.order - v2.order;
 		});
 	}
+
+	//#endregion
 
 	toJSON(): object {
 		return {

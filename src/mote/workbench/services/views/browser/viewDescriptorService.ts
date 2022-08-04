@@ -80,6 +80,10 @@ export class ViewDescriptorService extends Disposable implements IViewDescriptor
 		return this.viewContainersRegistry.getViewContainerLocation(viewContainer);
 	}
 
+	getViewContainersByLocation(location: ViewContainerLocation): ViewContainer[] {
+		return this.viewContainers.filter(v => this.getViewContainerLocation(v) === location);
+	}
+
 	getViewContainerModel(container: ViewContainer): ViewContainerModel {
 		return this.getOrRegisterViewContainerModel(container);
 	}
