@@ -20,6 +20,7 @@ import { EditorOption } from 'mote/editor/common/config/editorOptions';
 import { EditorScrollbar } from 'mote/editor/browser/viewParts/editorScrollbar/editorScrollbar';
 import { ViewLayout } from 'mote/editor/common/viewLayout/viewLayout';
 import { ViewLineExtensionsRegistry } from 'mote/editor/browser/viewLineExtensions';
+import { TemplatePicker } from 'mote/editor/browser/viewParts/templatePicker/templatePicker';
 
 export interface IOverlayWidgetData {
 	widget: IOverlayWidget;
@@ -34,6 +35,7 @@ export class EditorView extends ViewEventHandler {
 	// These are parts, but we must do some API related calls on them, so we keep a reference
 	private readonly viewParts: ViewPart[];
 	private readonly overlayWidgets: ViewOverlayWidgets;
+	private readonly templatePicker: TemplatePicker;
 	private readonly viewLines: ViewLines;
 	private readonly scrollbar: EditorScrollbar;
 
@@ -81,6 +83,9 @@ export class EditorView extends ViewEventHandler {
 		this.scrollbar = new EditorScrollbar(this.context, this.linesContent, this.domNode, this.overflowGuardContainer);
 		this.viewParts.push(this.scrollbar);
 
+		this.templatePicker = this.instantiationService.createInstance(TemplatePicker, this.context, this.linesContent);
+		this.viewParts.push(this.templatePicker);
+
 		this.viewLines = this.instantiationService.createInstance(ViewLines, this.context, this.linesContent);
 
 		// Overlay widgets
@@ -89,6 +94,7 @@ export class EditorView extends ViewEventHandler {
 
 		// -------------- Wire dom nodes up
 		this.createHeader(this.linesContent, viewController);
+		this.linesContent.appendChild(this.templatePicker.getDomNode());
 		this.linesContent.appendChild(this.viewLines.getDomNode());
 
 		this.overflowGuardContainer.appendChild(this.scrollbar.getDomNode());
@@ -269,23 +275,31 @@ export class EditorView extends ViewEventHandler {
 		this.linesContent.setHeight(1000000);
 
 		const padding = layoutInfo.width < 600 ? 24 : 96;
+		const paddingLeft = this.getSafePaddingLeftCSS(padding);
+		const paddingRight = this.getSafePaddingRightCSS(padding);
 
-		this.headerContainer.domNode.style.paddingLeft = this.getSafePaddingLeftCSS(padding);
-		this.headerContainer.domNode.style.paddingRight = this.getSafePaddingRightCSS(padding);
+		this.headerContainer.domNode.style.paddingLeft = paddingLeft;
+		this.headerContainer.domNode.style.paddingRight = paddingRight;
 
-		this.viewLines.getDomNode().domNode.style.paddingLeft = this.getSafePaddingLeftCSS(padding);
-		this.viewLines.getDomNode().domNode.style.paddingRight = this.getSafePaddingRightCSS(padding);
+		this.templatePicker.getDomNode().domNode.style.paddingLeft = paddingLeft;
+		this.templatePicker.getDomNode().domNode.style.paddingRight = paddingRight;
+
+		this.viewLines.getDomNode().domNode.style.paddingLeft = paddingLeft;
+		this.viewLines.getDomNode().domNode.style.paddingRight = paddingRight;
+
+		let width: number;
 
 		if (layoutInfo.width > 1500) {
-			this.headerContainer.setWidth(1200);
-			this.viewLines.getDomNode().setWidth(1200);
+			width = 900;
 		} else if (layoutInfo.width > 1200) {
-			this.headerContainer.setWidth(900);
-			this.viewLines.getDomNode().setWidth(900);
+			width = 720;
 		} else {
-			this.headerContainer.setWidth(layoutInfo.width - padding * 2 - 1);
-			this.viewLines.getDomNode().setWidth(layoutInfo.width - padding * 2 - 1);
+			width = layoutInfo.width - padding * 2 - 1;
 		}
+
+		this.headerContainer.setWidth(width);
+		this.templatePicker.getDomNode().setWidth(width);
+		this.viewLines.getDomNode().setWidth(width);
 
 	}
 

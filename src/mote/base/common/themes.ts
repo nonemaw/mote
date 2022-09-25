@@ -89,7 +89,7 @@ export const ThemedColors = {
 	uiLightBorder: "#F2F1F0",
 	uiLightGray: "#C4C4C4",
 	regularTextColor: defaultLightWithAlpha(1),
-}
+};
 
 export const ThemedStyles = {
 
