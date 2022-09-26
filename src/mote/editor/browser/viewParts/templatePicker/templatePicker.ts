@@ -61,9 +61,9 @@ export class TemplatePicker extends ViewPart {
 
 	constructor(
 		context: ViewContext,
-		private readonly linesContent: FastDomNode<HTMLElement>,
+		linesContent: FastDomNode<HTMLElement>,
 		@IThemeService private themeService: IThemeService,
-		@IInstantiationService private instantiationService: IInstantiationService,
+		@IInstantiationService instantiationService: IInstantiationService,
 	) {
 		super(context);
 
