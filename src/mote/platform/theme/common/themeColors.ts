@@ -13,7 +13,7 @@ export function registerColor(id: string, defaults: ColorDefaults | null, descri
 export const foreground = colorRegistry.registerColor('foreground', { dark: '#CCCCCC', light: '#616161', hcDark: '#FFFFFF', hcLight: '#292929' }, 'Overall foreground color. This color is only used if not overridden by a component.');
 export const disabledForeground = registerColor('disabledForeground', { dark: '#CCCCCC80', light: '#61616180', hcDark: '#A5A5A5', hcLight: '#7F7F7F' }, nls.localize('disabledForeground', "Overall foreground for disabled elements. This color is only used if not overridden by a component."));
 export const regularTextColor = colorRegistry.registerColor('text.regular.color', { dark: '#ffffffcf', light: '#37352f' }, 'regularTextColor');
-export const mediumTextColor = colorRegistry.registerColor('text.medium.color', { dark: '#ffffffa6', light: '#37352fa6' }, 'regularTextColor');
+export const mediumTextColor = colorRegistry.registerColor('text.medium.color', { dark: '#ffffffa6', light: '#37352f80' }, 'mediumTextColor');
 export const lightTextColor = colorRegistry.registerColor('text.light.color', { dark: '#ffffff26', light: '#37352f26' }, '');
 export const regularDividerColor = colorRegistry.registerColor('divider.regular.color', { light: '', dark: '' }, '');
 export const darkDividerColor = colorRegistry.registerColor('divider.dark.color', { light: '', dark: '' }, '');
@@ -58,6 +58,7 @@ export const mediumIconColor = colorRegistry.registerColor('icon.medium.color', 
 export const iconBackground = colorRegistry.registerColor('icon.background', { light: '#d0d0cf', dark: '#898989' }, '');
 
 export const buttonHoverBackground = colorRegistry.registerColor('button.hoverBackground', { ...ThemedStyles.buttonHoveredBackground, }, 'buttonHoverBackground');
+export const buttonHoverBuleBackground = colorRegistry.registerColor('button.hoverBackgroundWithBule', { ...ThemedStyles.buttonHoveredBackground, light: '#2eaadc35' }, 'buttonHoverBackground');
 export const outlineButtonBorder = colorRegistry.registerColor('button.outline.border', { light: '#37352f29', dark: '' }, '');
 
 /**

@@ -3,7 +3,7 @@ import { ViewContext } from 'mote/editor/browser/view/viewContext';
 import { ViewController } from 'mote/editor/browser/view/viewController';
 import { IVisibleLinesHost } from 'mote/editor/browser/view/viewLayer';
 import { ViewPart } from 'mote/editor/browser/view/viewPart';
-import { EmptyViewLine, ViewLine } from 'mote/editor/browser/viewParts/lines/viewLine';
+import { ViewLine } from 'mote/editor/browser/viewParts/lines/viewLine';
 import * as viewEvents from 'mote/editor/common/viewEvents';
 import { ViewportData } from 'mote/editor/common/viewLayout/viewLinesViewportData';
 import { clearNode } from 'vs/base/browser/dom';
@@ -80,11 +80,6 @@ export class ViewLines extends ViewPart implements IVisibleLinesHost<ViewLine> {
 			}));
 
 		});
-		if (pageIds.length === 0) {
-			const line = new EmptyViewLine(this.viewController);
-			line.renderLine();
-			this.domNode.domNode.appendChild(line.getDomNode());
-		}
 
 		// (2) compute horizontal scroll position:
 		//  - this must happen after the lines are in the DOM since it might need a line that rendered just now
