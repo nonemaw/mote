@@ -1,16 +1,15 @@
-/* eslint-disable code-no-unexternalized-strings */
-import { ThemedStyles } from "mote/base/common/themes";
-import { IThemeService } from "mote/platform/theme/common/themeService";
+import { IThemeService } from 'mote/platform/theme/common/themeService';
 import { IWorkspaceContextService } from 'mote/platform/workspace/common/workspace';
-import { PaneComposite, PaneCompositeDescriptor, PaneCompositeExtensions, PaneCompositeRegistry } from "mote/workbench/browser/panecomposite";
-import { CompositePart } from "mote/workbench/browser/parts/compositePart";
-import { IPaneCompositePart } from "mote/workbench/browser/parts/paneCompositePart";
-import { IPaneComposite } from "mote/workbench/common/panecomposite";
-import { IWorkbenchLayoutService, Parts } from "mote/workbench/services/layout/browser/layoutService";
-import { assertIsDefined } from "vs/base/common/types";
-import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
-import { ILogService } from "vs/platform/log/common/log";
-import { Registry } from "vs/platform/registry/common/platform";
+import { PaneComposite, PaneCompositeDescriptor, PaneCompositeExtensions, PaneCompositeRegistry } from 'mote/workbench/browser/panecomposite';
+import { CompositePart } from 'mote/workbench/browser/parts/compositePart';
+import { IPaneCompositePart } from 'mote/workbench/browser/parts/paneCompositePart';
+import { IPaneComposite } from 'mote/workbench/common/panecomposite';
+import { SIDE_BAR_BACKGROUND } from 'mote/workbench/common/theme';
+import { IWorkbenchLayoutService, Parts } from 'mote/workbench/services/layout/browser/layoutService';
+import { assertIsDefined } from 'vs/base/common/types';
+import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import { ILogService } from 'vs/platform/log/common/log';
+import { Registry } from 'vs/platform/registry/common/platform';
 
 export class SidebarPart extends CompositePart<PaneComposite> implements IPaneCompositePart {
 
@@ -46,23 +45,8 @@ export class SidebarPart extends CompositePart<PaneComposite> implements IPaneCo
 
 	override create(parent: HTMLElement, options?: object): void {
 		this.element = parent;
-
 		super.create(parent);
 
-	}
-
-	override createTitleArea(parent: HTMLElement): HTMLElement {
-
-		const titleArea = super.createTitleArea(parent);
-
-		/*
-		titleArea.style.padding = '2px 14px';
-		titleArea.style.fontSize = '14px';
-		titleArea.style.height = '45px';
-		titleArea.style.alignItems = 'center';
-		titleArea.style.fontWeight = `${fonts.fontWeight.medium}px`;
-		*/
-		return titleArea;
 	}
 
 	override updateStyles(): void {
@@ -70,13 +54,7 @@ export class SidebarPart extends CompositePart<PaneComposite> implements IPaneCo
 
 		// Part container
 		const container = assertIsDefined(this.getContainer());
-		container.style.backgroundColor = ThemedStyles.sidebarBackground.dark;
-	}
-
-	//#region Viewlet service
-
-	getActivePaneComposite(): IPaneComposite | undefined {
-		return <IPaneComposite>this.getActiveComposite();
+		container.style.backgroundColor = this.getColor(SIDE_BAR_BACKGROUND) || '';
 	}
 
 	async openPaneComposite(id: string | undefined, focus?: boolean): Promise<IPaneComposite | undefined> {
@@ -116,6 +94,11 @@ export class SidebarPart extends CompositePart<PaneComposite> implements IPaneCo
 		return this.getPaneComposites().filter(viewlet => viewlet.id === id)[0];
 	}
 
+	getActivePaneComposite(): IPaneComposite | undefined {
+		return <IPaneComposite>this.getActiveComposite();
+	}
+
+
 	getPaneComposites(): PaneCompositeDescriptor[] {
 		return this.viewletRegistry.getPaneComposites().sort((v1, v2) => {
 			if (typeof v1.order !== 'number') {
@@ -136,5 +119,9 @@ export class SidebarPart extends CompositePart<PaneComposite> implements IPaneCo
 		return {
 			type: Parts.SIDEBAR_PART
 		};
+	}
+
+	hideActivePaneComposite(): void {
+		this.hideActiveComposite();
 	}
 }

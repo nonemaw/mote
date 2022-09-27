@@ -1,10 +1,10 @@
 import { Lodash } from 'mote/base/common/lodash';
-import blockTypes from 'mote/editor/common/blockTypes';
 import { EditOperation } from 'mote/editor/common/core/editOperation';
 import { TextSelection } from 'mote/editor/common/core/selectionUtils';
 import { Transaction } from 'mote/editor/common/core/transaction';
 import { collectValueFromSegment } from 'mote/editor/common/segmentUtils';
 import BlockStore from 'mote/platform/store/common/blockStore';
+import { BlockTypes } from 'mote/platform/store/common/record';
 import RecordStore from 'mote/platform/store/common/recordStore';
 
 export interface ICommandExecutor {
@@ -27,38 +27,60 @@ interface ParseMarkdownBlockProps extends MarkdownBlockParseRule {
 }
 
 const markdownBlockParseRules: MarkdownBlockParseRule[] = [];
+
+// Image tag
+markdownBlockParseRules.push({
+	matchRegex: /^\!\[\]$/,
+	toBlockType: () => BlockTypes.image,
+	insertTextAfter: false,
+});
+
 // Todo tag
 markdownBlockParseRules.push({
 	matchRegex: /^\[\]$/,
-	toBlockType: () => blockTypes.todo,
+	toBlockType: () => BlockTypes.todo,
 	insertTextAfter: false,
 });
 
 // Add H3 tag
 markdownBlockParseRules.push({
 	matchRegex: /^### $/,
-	toBlockType: () => blockTypes.heading3,
+	toBlockType: () => BlockTypes.heading3,
 	insertTextAfter: false,
 });
 
 // Add H2 tag
 markdownBlockParseRules.push({
 	matchRegex: /^## $/,
-	toBlockType: () => blockTypes.heading2,
+	toBlockType: () => BlockTypes.heading2,
 	insertTextAfter: false,
 });
 
 // Add H1 tag
 markdownBlockParseRules.push({
 	matchRegex: /^# $/,
-	toBlockType: () => blockTypes.header,
+	toBlockType: () => BlockTypes.header,
+	insertTextAfter: false,
+});
+
+// Add Code tag
+markdownBlockParseRules.push({
+	matchRegex: /^```$/,
+	toBlockType: () => BlockTypes.code,
 	insertTextAfter: false,
 });
 
 // Add Quote tag
 markdownBlockParseRules.push({
 	matchRegex: /^["“|] $/,
-	toBlockType: () => blockTypes.quote,
+	toBlockType: () => BlockTypes.quote,
+	insertTextAfter: false,
+});
+
+// Add BulletedList tag
+markdownBlockParseRules.push({
+	matchRegex: /^[-\*\+] $/,
+	toBlockType: () => BlockTypes.bulletedList,
 	insertTextAfter: false,
 });
 
@@ -66,7 +88,7 @@ export class Markdown {
 	public static parse(executor: ICommandExecutor): boolean {
 		const storeValue = executor.store.getRecordStoreAtRootPath().getValue();
 		const blockType = storeValue.type;
-		if (blockType !== blockTypes.code) {
+		if (blockType !== BlockTypes.code) {
 			// Only match one block level markdown rule and take action
 			const ruleMatched = Lodash.find(markdownBlockParseRules, (rule) => {
 				return this.tryParse({ ...rule, executor });
@@ -95,7 +117,7 @@ export class Markdown {
 		}
 		const parentStoreType = parentStore.getType() || 'text';
 
-		if (blockTypes.text !== parentStoreType) {
+		if (BlockTypes.text !== parentStoreType) {
 			return false;
 		}
 

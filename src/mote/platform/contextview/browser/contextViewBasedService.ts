@@ -1,12 +1,14 @@
 import { IContextMenuDelegate } from 'mote/base/browser/contextmenu';
 import { IMenuLike } from 'mote/base/browser/ui/menu/menu';
-import { IThemeService } from 'mote/platform/theme/common/themeService';
+import { attachMenuStyler } from 'mote/platform/theme/common/styler';
+import { contextViewBackground, regularTextColor } from 'mote/platform/theme/common/themeColors';
+import { IThemeService, Themable } from 'mote/platform/theme/common/themeService';
 import { $, addDisposableListener, EventType, isHTMLElement } from 'vs/base/browser/dom';
 import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
 import { IMenuOptions } from 'vs/base/browser/ui/menu/menu';
 import { ActionRunner, IAction, IRunEvent } from 'vs/base/common/actions';
 import { Emitter } from 'vs/base/common/event';
-import { combinedDisposable, Disposable, DisposableStore, IDisposable } from 'vs/base/common/lifecycle';
+import { combinedDisposable, DisposableStore, IDisposable } from 'vs/base/common/lifecycle';
 import { IContextMenuService, IContextViewService } from './contextView';
 
 export interface IContextViewHandlerOptions {
@@ -14,8 +16,10 @@ export interface IContextViewHandlerOptions {
 }
 
 
-
-export abstract class BrowserContextViewBasedService extends Disposable implements IContextMenuService {
+/**
+ * @deprecated use ContextViewHelper
+ */
+export abstract class BrowserContextViewBasedService extends Themable implements IContextMenuService {
 	declare readonly _serviceBrand: undefined;
 
 	private readonly _onDidShowContextMenu = new Emitter<void>();
@@ -33,7 +37,7 @@ export abstract class BrowserContextViewBasedService extends Disposable implemen
 		@IThemeService themeService: IThemeService,
 		@IContextViewService private readonly contextViewService: IContextViewService,
 	) {
-		super();
+		super(themeService);
 	}
 
 	configure(options: IContextViewHandlerOptions): void {
@@ -98,16 +102,17 @@ export abstract class BrowserContextViewBasedService extends Disposable implemen
 
 		const menu = this.createMenu(container, actions, { actionRunner: actionRunner });
 
-		//menuDisposables.add(attachMenuStyler(menu, this.themeService));
+		menuDisposables.add(attachMenuStyler(menu, this.themeService));
 
 		// TODO fixme later, use auto detch instead of force style
 		const menuContainer = menu.getContainer();
-		menuContainer.style.color = 'rgb(204, 204, 204)';
-		menuContainer.style.backgroundColor = 'rgb(48, 48, 49)';
+		menuContainer.style.color = this.getColor(regularTextColor)!;//'rgb(204, 204, 204)';
+		menuContainer.style.backgroundColor = this.getColor(contextViewBackground)!;//'rgb(48, 48, 49)';
 		menuContainer.style.boxShadow = 'rgb(0 0 0 / 36%) 0px 2px 8px';
 
 		menu.onDidCancel(() => this.contextViewService.hideContextView(true), null, menuDisposables);
 		menu.onDidBlur(() => this.contextViewService.hideContextView(true), null, menuDisposables);
+
 		menuDisposables.add(addDisposableListener(window, EventType.BLUR, () => this.contextViewService.hideContextView(true)));
 		menuDisposables.add(addDisposableListener(window, EventType.MOUSE_DOWN, (e: MouseEvent) => {
 			if (e.defaultPrevented) {
@@ -132,6 +137,7 @@ export abstract class BrowserContextViewBasedService extends Disposable implemen
 
 			this.contextViewService.hideContextView(true);
 		}));
+
 		return combinedDisposable(menuDisposables, menu);
 	}
 

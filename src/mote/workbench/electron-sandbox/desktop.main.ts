@@ -6,7 +6,7 @@ import { ServiceCollection } from "vs/platform/instantiation/common/serviceColle
 import { Workbench } from "mote/workbench/browser/workbench";
 import { INativeWorkbenchEnvironmentService, NativeWorkbenchEnvironmentService } from "mote/workbench/services/environment/electron-sandbox/environmentService";
 import { IProductService } from "vs/platform/product/common/productService";
-import product from "vs/platform/product/common/product";
+import product from "mote/platform/product/common/product";
 import { LoggerChannelClient, LogLevelChannelClient } from "vs/platform/log/common/logIpc";
 import { ILoggerService, ILogService, LogLevel } from "vs/platform/log/common/log";
 import { isCI } from "vs/base/common/platform";
@@ -18,6 +18,10 @@ import { BrowserStorageService } from 'vs/workbench/services/storage/browser/sto
 import { onUnexpectedError } from "vs/base/common/errors";
 import { IStorageService } from "vs/platform/storage/common/storage";
 import { NativeWindow } from "./window";
+import { RemoteService } from 'mote/workbench/services/remote/browser/remoteService';
+import { IRemoteService } from 'mote/platform/remote/common/remote';
+import { UserService } from 'mote/workbench/services/user/common/userService';
+import { IUserService } from 'mote/workbench/services/user/common/user';
 
 export class DesktopMain extends Disposable {
 	constructor(
@@ -81,6 +85,16 @@ export class DesktopMain extends Disposable {
 		// Storage
 		const storageService = await this.createStorageService(logService);
 		serviceCollection.set(IStorageService, storageService);
+
+		// Remote
+		const remoteService = new RemoteService(productService);
+		serviceCollection.set(IRemoteService, remoteService);
+
+		// User
+		const userService = new UserService(storageService, remoteService);
+		serviceCollection.set(IUserService, userService);
+
+		remoteService.userService = userService;
 
 		return { serviceCollection, logService };
 	}

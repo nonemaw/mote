@@ -13,9 +13,10 @@ import { IUserProfile } from 'mote/platform/user/common/user';
 import SpaceRootStore from 'mote/platform/store/common/spaceRootStore';
 import SpaceStore from 'mote/platform/store/common/spaceStore';
 import { IStoreService } from 'mote/platform/store/common/store';
-import { IStorageService } from 'vs/platform/storage/common/storage';
+import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
 import { StoreStorageProvider } from 'mote/platform/store/common/storeStorageProvider';
 
+const CurrentSpaceIdStorageKey = 'CurrentSpaceIdStorageKey';
 export class WorkspaceService extends Disposable implements IWorkspaceContextService {
 	declare _serviceBrand: undefined;
 
@@ -41,7 +42,7 @@ export class WorkspaceService extends Disposable implements IWorkspaceContextSer
 		@IUserService private readonly userService: IUserService,
 		@IEditorService private readonly editorService: IEditorService,
 		@IStoreService private readonly storeService: IStoreService,
-		@IStorageService storageService: IStorageService,
+		@IStorageService private readonly storageService: IStorageService,
 	) {
 		super();
 
@@ -49,6 +50,9 @@ export class WorkspaceService extends Disposable implements IWorkspaceContextSer
 
 		// Register storeage to use later
 		StoreStorageProvider.INSTANCE.registerStorage(storageService);
+
+		this.currentSpaceId = storageService.get(
+			CurrentSpaceIdStorageKey, StorageScope.WORKSPACE, '');
 
 		this._register(userService.onDidChangeCurrentProfile((profile) => this.onProfileChange(profile)));
 
@@ -105,6 +109,8 @@ export class WorkspaceService extends Disposable implements IWorkspaceContextSer
 
 	enterWorkspace(spaceId: string) {
 		this.currentSpaceId = spaceId;
+		this.storageService.store(CurrentSpaceIdStorageKey, spaceId, StorageScope.WORKSPACE, StorageTarget.MACHINE);
+
 		this._onDidChangeWorkspace.fire();
 	}
 
@@ -138,9 +144,8 @@ export class WorkspaceService extends Disposable implements IWorkspaceContextSer
 		let child = new SpaceStore({ table: 'space', id: spaceId }, { userId }, this.storeService);
 		EditOperation.addSetOperationForStore(child, { name: spaceName }, transaction);
 		child = EditOperation.appendToParent(spaceRootStore.getSpacesStore(), child, transaction).child as SpaceStore;
-		this.currentSpaceId = spaceId;
 		await transaction.commit();
-		this._onDidChangeWorkspace.fire();
+		this.enterWorkspace(spaceId);
 		return child;
 	}
 }

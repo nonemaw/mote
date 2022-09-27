@@ -1237,6 +1237,10 @@ ${formatRule(Codicon.menuSubmenu)}
 	outline: 0;
 }
 
+.action-item.focused {
+	background: var(--mote-button-hoverBackground);
+}
+
 .hc-black .context-view.monaco-menu-container,
 .hc-light .context-view.monaco-menu-container,
 :host-context(.hc-black) .context-view.monaco-menu-container,

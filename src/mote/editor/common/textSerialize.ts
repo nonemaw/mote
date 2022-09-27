@@ -48,7 +48,7 @@ export function segmentsToElement(segments: ISegment[]) {
 		const textContent = getFirstInArray(segment) as string;
 		const annotations: string[][] = getSecondArrayInArray(segment);
 
-		if (annotations.length == 0) {
+		if (annotations.length === 0) {
 			return textContent;
 		}
 
@@ -76,7 +76,7 @@ const inlineStyles: { [key: string]: CSSProperties } = {
 		lineHeight: "normal",
 		background: ThemedBase.light.gray.alpha(.15).css(),
 		color: ThemedColors.red,
-		borderRadius: 3,
+		borderRadius: '3px',
 		fontSize: "85%",
 		padding: "0.2em 0.4em"
 	},

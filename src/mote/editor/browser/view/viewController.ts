@@ -11,29 +11,74 @@ import { collectValueFromSegment, IAnnotation, ISegment } from 'mote/editor/comm
 import { EditOperation } from 'mote/editor/common/core/editOperation';
 import { DIFF_DELETE, DIFF_EQUAL, DIFF_INSERT } from 'mote/editor/common/diffMatchPatch';
 import { ViewEventHandler } from 'mote/editor/common/viewEventHandler';
-import blockTypes, { pureTextTypes, textBasedTypes } from 'mote/editor/common/blockTypes';
+import { keepLineTypes, textBasedTypes } from 'mote/editor/common/blockTypes';
 import { Markdown } from 'mote/editor/common/markdown';
 import { BugIndicatingError } from 'vs/base/common/errors';
 import { Segment } from 'mote/editor/common/core/segment';
 import { StoreUtils } from 'mote/platform/store/common/storeUtils';
+import { IEditorConfiguration } from 'mote/editor/common/config/editorConfiguration';
+import { Disposable } from 'vs/base/common/lifecycle';
+import { ConfigurationChangedEvent } from 'mote/editor/common/config/editorOptions';
+import { ViewLayout } from 'mote/editor/common/viewLayout/viewLayout';
+import { BlockTypes } from 'mote/platform/store/common/record';
 
 export interface ICommandDelegate {
 	type(text: string): void;
 	compositionType(text: string, replacePrevCharCnt: number, replaceNextCharCnt: number, positionDelta: number): void;
 }
 
-export class ViewController {
+export class ViewController extends Disposable {
 	public readonly onEvent: Event<OutgoingViewEvent>;
 
 	private selection: TextSelection;
 	private readonly eventDispatcher: ViewEventDispatcher;
+	private viewLayout!: ViewLayout;
 
 	constructor(
+		configuration: IEditorConfiguration,
+
 		private readonly contentStore: RecordStore<string[]>,
 	) {
+		super();
+
 		this.selection = { startIndex: -1, endIndex: -1, lineNumber: -2 };
 		this.eventDispatcher = new ViewEventDispatcher();
 		this.onEvent = this.eventDispatcher.onEvent;
+
+		this._register(configuration.onDidChangeFast((e) => {
+			try {
+				const eventsCollector = this.eventDispatcher.beginEmitViewEvents();
+				this.onConfigurationChanged(eventsCollector, e);
+			} finally {
+				this.eventDispatcher.endEmitViewEvents();
+			}
+		}));
+
+
+	}
+
+	public setViewLayout(viewLayout: ViewLayout) {
+		this.viewLayout = viewLayout;
+		this._register(this.viewLayout.onDidScroll((e) => {
+			if (e.scrollTopChanged) {
+				//this._tokenizeViewportSoon.schedule();
+			}
+			if (e.scrollTopChanged) {
+				//this._viewportStart.invalidate();
+			}
+			this.eventDispatcher.emitSingleViewEvent(new viewEvents.ViewScrollChangedEvent(e));
+			/*
+			this.eventDispatcher.emitOutgoingEvent(new ScrollChangedEvent(
+				e.oldScrollWidth, e.oldScrollLeft, e.oldScrollHeight, e.oldScrollTop,
+				e.scrollWidth, e.scrollLeft, e.scrollHeight, e.scrollTop
+			));
+			*/
+		}));
+	}
+
+	private onConfigurationChanged(eventsCollector: ViewEventsCollector, e: ConfigurationChangedEvent): void {
+		console.log('emit ViewConfigurationChangedEvent');
+		eventsCollector.emitViewEvent(new viewEvents.ViewConfigurationChangedEvent(e));
 	}
 
 	public addViewEventHandler(eventHandler: ViewEventHandler): void {
@@ -76,6 +121,18 @@ export class ViewController {
 		});
 	}
 
+	public insert(text: string): void {
+		this.executeCursorEdit(eventsCollector => {
+			Transaction.createAndCommit((transaction) => {
+				const lineNumber = this.selection.lineNumber;
+				const titleStore = this.getTitleStore();
+				this._insert(eventsCollector, text, transaction, titleStore, this.selection, TextSelectionMode.Editing);
+				// emit the line change event
+				eventsCollector.emitViewEvent(new viewEvents.ViewLinesInsertedEvent(lineNumber, lineNumber));
+			}, this.contentStore.userId);
+		});
+	}
+
 	public type(text: string): void {
 		this.executeCursorEdit(eventsCollector => {
 			Transaction.createAndCommit((transaction) => {
@@ -103,19 +160,26 @@ export class ViewController {
 		});
 	}
 
-	public enter() {
+	public enter(): boolean {
 		// We dont use executeCursorEdit because of some times user trigger this method
 		// before the content store has any children
 		this.withViewEventsCollector(eventsCollector => {
 			Transaction.createAndCommit((transaction) => {
-				let child: BlockStore = EditOperation.createBlockStore('text', transaction, this.contentStore);
 				let lineNumber: number;
 				// create first child
 				if (this.selection.lineNumber < 0) {
+					let child: BlockStore = EditOperation.createBlockStore('text', transaction, this.contentStore);
 					child = EditOperation.appendToParent(this.contentStore, child, transaction).child as BlockStore;
 					lineNumber = 0;
 				} else {
+					let type = 'text';
 					const lineStore = StoreUtils.createStoreForLineNumber(this.selection.lineNumber, this.contentStore);
+					if (keepLineTypes.has(lineStore.getType() || '')) {
+						// Some blocks required keep same styles in next line
+						// Just like todo, list
+						type = lineStore.getType()!;
+					}
+					let child: BlockStore = EditOperation.createBlockStore(type, transaction, this.contentStore);
 					child = EditOperation.insertChildAfterTarget(
 						this.contentStore, child, lineStore, transaction).child as BlockStore;
 					lineNumber = StoreUtils.getLineNumberForStore(child, this.contentStore);
@@ -125,6 +189,7 @@ export class ViewController {
 				this.setSelection({ startIndex: 0, endIndex: 0, lineNumber: lineNumber });
 			}, this.contentStore.userId);
 		});
+		return true;
 	}
 
 	//#endregion
@@ -171,7 +236,11 @@ export class ViewController {
 			// Bad case, should we throw a BugIndicatingError here?
 			return;
 		}
-		// TODO check readOnly or not
+		const titleStore = this.getTitleStore();
+		if (!titleStore.canEdit() || !titleStore.state.ready) {
+			// we couldn't operate on it
+			return;
+		}
 		this.withViewEventsCollector(callback);
 	}
 
@@ -225,9 +294,9 @@ export class ViewController {
 				const record = blockStore.getValue();
 				if (record) {
 					if (textBasedTypes.has(record.type)) {
-						EditOperation.turnInto(blockStore, blockTypes.text as any, transaction);
+						EditOperation.turnInto(blockStore, BlockTypes.text as any, transaction);
 						eventsCollector.emitViewEvent(new viewEvents.ViewLinesChangedEvent(selection.lineNumber, 1));
-					} else if (pureTextTypes.has(record.type)) {
+					} else {
 						EditOperation.removeChild(this.contentStore, store, transaction);
 						const deletedLineNumber = this.selection.lineNumber;
 						const newLineNumber = this.selection.lineNumber - 1;
@@ -261,7 +330,7 @@ export class ViewController {
 			switch (op) {
 				case DIFF_INSERT:
 					needChange = true;
-					this.insert(
+					this._insert(
 						eventsCollector,
 						txt,
 						transaction,
@@ -303,7 +372,7 @@ export class ViewController {
 		}
 	}
 
-	private insert(eventsCollector: ViewEventsCollector, content: string, transaction: Transaction, store: RecordStore, selection: TextSelection, selectionMode: TextSelectionMode) {
+	private _insert(eventsCollector: ViewEventsCollector, content: string, transaction: Transaction, store: RecordStore, selection: TextSelection, selectionMode: TextSelectionMode) {
 		const userId = transaction.userId;
 		if (TextSelectionMode.Editing !== selectionMode) {
 			return;

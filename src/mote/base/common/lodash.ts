@@ -77,4 +77,13 @@ export class Lodash {
 		}
 		return true;
 	}
+
+	static any<T>(collection: Array<T>, predicate: (value: T, index: number, collection: ArrayLike<T>) => boolean) {
+		for (let i = 0; i < collection.length; i++) {
+			if (predicate(collection[i], i, collection)) {
+				return true;
+			}
+		}
+		return false;
+	}
 }

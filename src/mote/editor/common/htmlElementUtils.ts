@@ -117,6 +117,22 @@ export function getTextMention(container: Node) {
 	}
 }
 
+export function flattenNode(container: Node, result: Text[] = []) {
+
+	if (isNode(container)) {
+		for (const child of Array.from(container.childNodes)) {
+			if (isTextNode(child)) {
+				result.push(child as Text);
+				continue;
+			}
+			if (child.childNodes) {
+				flattenNode(child, result);
+			}
+		}
+	}
+	return result;
+}
+
 export const BOM = "\ufeff";
 const BOM_REG = new RegExp(BOM, "g");
 

@@ -62,17 +62,21 @@ export class EditOperation {
 
 	public static appendToParent(parent: RecordStore, append: RecordStore, transaction: Transaction) {
 		this.addOperationForStore(parent, { id: append.id }, transaction, Command.ListAfter);
+		const child = append.cloneWithNewParent(parent);
+		this.addUpdateOperationForStore(child, { parent_id: parent.id }, transaction);
 		return {
 			parent: parent,
-			child: append.cloneWithNewParent(parent)
+			child: child
 		};
 	}
 
 	public static insertChildAfterTarget(parent: RecordStore, insert: RecordStore, after: RecordStore, transaction: Transaction) {
 		this.addOperationForStore(parent, { id: insert.id, after: after.id }, transaction, Command.ListAfter);
+		const child = insert.cloneWithNewParent(parent);
+		this.addUpdateOperationForStore(child, { parent_id: parent.id }, transaction);
 		return {
 			parent: parent,
-			child: insert.cloneWithNewParent(parent)
+			child: child
 		};
 	}
 

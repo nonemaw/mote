@@ -20,6 +20,11 @@ export interface IEditorContribution {
 	//restoreViewState?(state: any): void;
 }
 
+export const enum ScrollType {
+	Smooth = 0,
+	Immediate = 1,
+}
+
 /**
  * An editor.
  */
@@ -70,6 +75,14 @@ export interface IEditor {
 	 */
 	getSelection(): EditorSelection | null;
 
+	/**
+	 * Directly trigger a handler or an editor action.
+	 * @param source The source of the call.
+	 * @param handlerId The id of the handler or the id of a contribution.
+	 * @param payload Extra data to be sent to the handler.
+	 */
+	trigger(source: string | null | undefined, handlerId: string, payload: any): void;
+
 
 	/**
 	 * Gets the current model attached to this editor.
@@ -101,4 +114,27 @@ export interface IEditor {
 	 * @internal
 	 */
 	//changeDecorations(callback: (changeAccessor: IModelDecorationsChangeAccessor) => any): any;
+}
+
+/**
+ * The type of the `IEditor`.
+ */
+export const EditorType = {
+	IDocumentEditor: 'mote.editor.IDocumentEditor',
+	ICollectionEditor: 'mote.editor.ICollectionEditor'
+};
+
+/**
+ * Built-in commands.
+ * @internal
+ */
+export const enum Handler {
+	CompositionStart = 'compositionStart',
+	CompositionEnd = 'compositionEnd',
+	Type = 'type',
+	Decorate = 'decorate',
+	ReplacePreviousChar = 'replacePreviousChar',
+	CompositionType = 'compositionType',
+	Paste = 'paste',
+	Cut = 'cut',
 }

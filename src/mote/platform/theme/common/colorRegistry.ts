@@ -1,7 +1,9 @@
 import { IColorTheme } from 'mote/platform/theme/common/themeService';
 import { Color } from 'vs/base/common/color';
 import { Emitter, Event } from 'vs/base/common/event';
+import { IJSONSchema, IJSONSchemaMap } from 'vs/base/common/jsonSchema';
 import { assertNever } from 'vs/base/common/types';
+import { Extensions as JSONExtensions, IJSONContributionRegistry } from 'vs/platform/jsonschemas/common/jsonContributionRegistry';
 import { Registry } from 'vs/platform/registry/common/platform';
 
 //  ------ API types
@@ -15,6 +17,16 @@ export interface ColorContribution {
 	readonly defaults: ColorDefaults | null;
 	readonly needsTransparency: boolean;
 	readonly deprecationMessage: string | undefined;
+}
+
+/**
+ * Returns the css variable name for the given color identifier. Dots (`.`) are replaced with hyphens (`-`) and
+ * everything is prefixed with `--mote-`.
+ *
+ * @sample `editorSuggestWidget.background` is `--mote-editorSuggestWidget-background`.
+ */
+export function asCssVariableName(colorIdent: ColorIdentifier): string {
+	return `--mote-${colorIdent.replace(/\./g, '-')}`;
 }
 
 export const enum ColorTransformType {
@@ -88,6 +100,8 @@ class ColorRegistry implements IColorRegistry {
 	readonly onDidChangeSchema: Event<void> = this._onDidChangeSchema.event;
 
 	private colorsById: { [key: string]: ColorContribution };
+	private colorSchema: IJSONSchema & { properties: IJSONSchemaMap } = { type: 'object', properties: {} };
+	private colorReferenceSchema: IJSONSchema & { enum: string[]; enumDescriptions: string[] } = { type: 'string', enum: [], enumDescriptions: [] };
 
 	constructor() {
 		this.colorsById = {};
@@ -96,6 +110,13 @@ class ColorRegistry implements IColorRegistry {
 	public registerColor(id: string, defaults: ColorDefaults | null, description: string, needsTransparency = false, deprecationMessage?: string): ColorIdentifier {
 		const colorContribution: ColorContribution = { id, description, defaults, needsTransparency, deprecationMessage };
 		this.colorsById[id] = colorContribution;
+		const propertySchema: IJSONSchema = { type: 'string', description, format: 'color-hex', defaultSnippets: [{ body: '${1:#ff0000}' }] };
+		if (deprecationMessage) {
+			propertySchema.deprecationMessage = deprecationMessage;
+		}
+		this.colorSchema.properties[id] = propertySchema;
+		this.colorReferenceSchema.enum.push(id);
+		this.colorReferenceSchema.enumDescriptions.push(description);
 
 		this._onDidChangeSchema.fire();
 		return id;
@@ -104,6 +125,13 @@ class ColorRegistry implements IColorRegistry {
 
 	public deregisterColor(id: string): void {
 		delete this.colorsById[id];
+		delete this.colorSchema.properties[id];
+		const index = this.colorReferenceSchema.enum.indexOf(id);
+		if (index !== -1) {
+			this.colorReferenceSchema.enum.splice(index, 1);
+			this.colorReferenceSchema.enumDescriptions.splice(index, 1);
+		}
+
 		this._onDidChangeSchema.fire();
 	}
 
@@ -115,9 +143,20 @@ class ColorRegistry implements IColorRegistry {
 		const colorDesc = this.colorsById[id];
 		if (colorDesc && colorDesc.defaults) {
 			const colorValue = colorDesc.defaults[theme.type];
+			if (typeof colorValue === 'string' && colorValue.startsWith('rgb')) {
+				console.error(`[${id}] value is ${colorValue}, shold use HEX`);
+			}
 			return resolveColorValue(colorValue, theme);
 		}
 		return undefined;
+	}
+
+	public getColorSchema(): IJSONSchema {
+		return this.colorSchema;
+	}
+
+	public getColorReferenceSchema(): IJSONSchema {
+		return this.colorReferenceSchema;
 	}
 
 	public toString() {
@@ -134,8 +173,13 @@ class ColorRegistry implements IColorRegistry {
 	}
 }
 
+const colorRegistry = new ColorRegistry();
 
-Registry.add(ColorExtensions.ColorContribution, new ColorRegistry());
+export function getColorRegistry(): IColorRegistry {
+	return colorRegistry;
+}
+
+Registry.add(ColorExtensions.ColorContribution, colorRegistry);
 
 // ----- color functions
 
@@ -228,3 +272,8 @@ export function resolveColorValue(colorValue: ColorValue | null | undefined, the
 	}
 	return undefined;
 }
+
+export const workbenchColorsSchemaId = 'mote://schemas/workbench-colors';
+
+const schemaRegistry = Registry.as<IJSONContributionRegistry>(JSONExtensions.JSONContribution);
+schemaRegistry.registerSchema(workbenchColorsSchemaId, colorRegistry.getColorSchema());

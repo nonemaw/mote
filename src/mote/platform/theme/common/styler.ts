@@ -88,8 +88,6 @@ export interface ISelectBoxStyleOverrides extends IStyleOverrides, IListStyleOve
 	focusBorder?: ColorIdentifier;
 }
 
-
-
 export interface IListStyleOverrides extends IStyleOverrides {
 	listBackground?: ColorIdentifier;
 	listFocusBackground?: ColorIdentifier;
@@ -125,7 +123,7 @@ export function attachListStyler(widget: IThemable, themeService: IThemeService,
 }
 
 export const defaultListStyles: IColorMapping = {
-
+	listFocusBackground: themeColors.listFocusBackground
 };
 
 export interface IButtonStyleOverrides extends IStyleOverrides {
@@ -138,7 +136,6 @@ export interface IButtonStyleOverrides extends IStyleOverrides {
 	buttonBorder?: ColorIdentifier;
 }
 
-
 export interface IKeybindingLabelStyleOverrides extends IStyleOverrides {
 	keybindingLabelBackground?: ColorIdentifier;
 	keybindingLabelForeground?: ColorIdentifier;
@@ -146,7 +143,6 @@ export interface IKeybindingLabelStyleOverrides extends IStyleOverrides {
 	keybindingLabelBottomBorder?: ColorIdentifier;
 	keybindingLabelShadow?: ColorIdentifier;
 }
-
 
 export interface IProgressBarStyleOverrides extends IStyleOverrides {
 	progressBarBackground?: ColorIdentifier;
@@ -183,6 +179,10 @@ export interface IMenuStyleOverrides extends IColorMapping {
 }
 
 export const defaultMenuStyles = <IMenuStyleOverrides>{
+	shadowColor: themeColors.widgetShadow,
+	borderColor: themeColors.menuBorder,
+	foregroundColor: themeColors.menuForeground,
+	backgroundColor: themeColors.menuBackground,
 };
 
 export function attachMenuStyler(widget: IThemable, themeService: IThemeService, style?: IMenuStyleOverrides): IDisposable {
@@ -213,4 +213,39 @@ export const defaultDialogStyles = <IDialogStyleOverrides>{
 
 export function attachDialogStyler(widget: IThemable, themeService: IThemeService, style?: IDialogStyleOverrides): IDisposable {
 	return attachStyler(themeService, { ...defaultDialogStyles, ...style }, widget);
+}
+
+interface IItemContainerStyleOverrides {
+	lightTextColor: ColorIdentifier;
+	mediumTextColor: ColorIdentifier;
+	regularTextColor: ColorIdentifier;
+}
+
+export const defaultItemContainerStyles = <IItemContainerStyleOverrides>{
+	lightTextColor: themeColors.lightTextColor,
+	mediumTextColor: themeColors.mediumTextColor,
+	regularTextColor: themeColors.regularTextColor,
+};
+
+export function attachItemContainerStyler(widget: IThemable, themeService: IThemeService, style?: IItemContainerStyleOverrides): IDisposable {
+	return attachStyler(themeService, { ...defaultItemContainerStyles, ...style }, widget);
+}
+
+interface ISwitchButtonStyleOverrides extends IButtonStyleOverrides {
+	switchTurnOnBackground?: ColorIdentifier;
+	switchTurnOffBackground?: ColorIdentifier;
+	switchShadow?: ColorIdentifier;
+	circleBackground?: ColorIdentifier;
+	circleShadow?: ColorIdentifier;
+	switchBoxShadow?: ColorIdentifier;
+}
+
+export const defaultSwitchButtonStyles = <ISwitchButtonStyleOverrides>{
+	switchBoxShadow: themeColors.darkDividerColor,
+	switchTurnOnBackground: themeColors.switcherOnBackground,
+	switchTurnOffBackground: themeColors.switcherOffBackground
+};
+
+export function attachSwitchButtonStyler(widget: IThemable, themeService: IThemeService, style?: ISwitchButtonStyleOverrides): IDisposable {
+	return attachStyler(themeService, { ...defaultSwitchButtonStyles, ...style }, widget);
 }

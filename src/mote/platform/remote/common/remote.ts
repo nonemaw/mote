@@ -13,6 +13,8 @@ export interface IRemoteService {
 	signup(payload: UserSignupPayload): Promise<LoginData>;
 
 	syncRecordValue(userId: string, pointer: Pointer, version?: number): Promise<RecordWithRole>;
+
+	uploadFile(file: File): Promise<UploadData>;
 }
 
 //#region payload
@@ -43,7 +45,12 @@ export interface LoginData {
 	username: string;
 	nickname: string;
 	email: string;
-	token?: string;
+	token: string;
+}
+
+export interface UploadData {
+	url: string;
+	filename: string;
 }
 
 export interface SyncRecordRequest {

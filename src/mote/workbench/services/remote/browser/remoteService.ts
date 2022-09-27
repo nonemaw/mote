@@ -1,14 +1,21 @@
 import { Lodash } from 'mote/base/common/lodash';
-import { doFetch, config } from 'mote/base/parts/request/common/request';
+import { doFetch } from 'mote/base/parts/request/common/request';
 import { Pointer, RecordWithRole } from 'mote/platform/store/common/record';
 import RequestQueue from 'mote/workbench/services/remote/common/requestQueue';
-import { CaffeineResponse, IRemoteService, LoginData, SyncRecordRequest, UserLoginPayload, UserSignupPayload } from 'mote/platform/remote/common/remote';
+import { CaffeineResponse, IRemoteService, LoginData, SyncRecordRequest, UploadData, UserLoginPayload, UserSignupPayload } from 'mote/platform/remote/common/remote';
 import { sha1Hex } from 'vs/base/browser/hash';
-import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { generateUuid } from 'vs/base/common/uuid';
 import { TransactionQueue } from 'mote/platform/transaction/common/transaction';
 import { CaffeineError } from 'mote/base/common/errors';
+import { IUserService } from 'mote/workbench/services/user/common/user';
+import { IProductService } from 'vs/platform/product/common/productService';
 
+
+let host: string;
+
+function genarateUrl(path: string) {
+	return `${host}${path}`;
+}
 
 type IRecordMap = { [key: string]: { [key: string]: RecordWithRole } };
 
@@ -69,7 +76,7 @@ const syncRecordValues = async (requests: SyncRecordRequest[]) => {
 		requestMap[key] = request;
 	}
 	requests = Object.keys(requestMap).map(key => requestMap[key]);
-	const recordValues = await doFetch<IRecordMap>('/api/syncRecordValues', requests, 'POST');
+	const recordValues = await RemoteService.INSTANCE.syncRecordValues(requests);
 	const data = recordValues ? recordValues : {};
 	const recordMap = new RecordMap(data);
 	return recordMap;
@@ -77,20 +84,21 @@ const syncRecordValues = async (requests: SyncRecordRequest[]) => {
 
 export class RemoteService implements IRemoteService {
 
+	public static INSTANCE: RemoteService;
+
 	readonly _serviceBrand: undefined;
 
 	private timeout = 1200;
 
-	constructor(
-		@IEnvironmentService environmentService: IEnvironmentService,
-	) {
-		if (environmentService.isBuilt) {
-			config.apiDomain = config.apiProd;
-		} else {
-			config.apiDomain = config.apiDev;
-		}
+	public userService!: IUserService;
 
+	constructor(
+		@IProductService productService: IProductService,
+	) {
+
+		host = productService.updateUrl || 'http://localhost:7071';
 		setInterval(() => this.applyTransactions(), this.timeout);
+		RemoteService.INSTANCE = this;
 	}
 
 	//#region user
@@ -127,6 +135,17 @@ export class RemoteService implements IRemoteService {
 		});
 	}
 
+	async syncRecordValues(payload: SyncRecordRequest[]) {
+		return await this.doPost<IRecordMap>('/api/syncRecordValues', payload);
+	}
+
+	async uploadFile(file: File) {
+		const userId = this.userService.currentProfile?.id;
+		const data = new FormData();
+		data.append('file', file);
+		return await this.doPost<UploadData>(`/api/upload?filename=${file.name}&username=${userId}`, data);
+	}
+
 	private async applyTransactions() {
 		if (TransactionQueue.length === 0) {
 			return Promise.resolve();
@@ -139,18 +158,29 @@ export class RemoteService implements IRemoteService {
 		this.doPost('/api/applyTransactions', request);
 	}
 
-	private async doGet<T>(url: string) {
-		const response = await doFetch<CaffeineResponse<T>>(url, null, 'GET');
-		if (response.code === 0) {
-			return response.data;
-		}
-		throw new Error(response.message);
+	private async doGet<T>(path: string): Promise<T> {
+		return this.executeRequest(() => doFetch<CaffeineResponse<T>>(genarateUrl(path), null, 'GET'));
 	}
 
-	private async doPost<T>(url: string, payload: any) {
-		const response = await doFetch<CaffeineResponse<T>>(url, payload, 'POST');
-		if (response.code === 0) {
-			return response.data;
+	private async doPost<T>(path: string, payload: any): Promise<T> {
+		return this.executeRequest(() => doFetch<CaffeineResponse<T>>(genarateUrl(path), payload, 'POST'));
+	}
+
+	private async executeRequest<T>(callback: () => Promise<CaffeineResponse<T>>) {
+		// Check token valid or not
+		const token = sessionStorage.getItem('auth_token');
+		if (this.userService.currentProfile && !token) {
+			// We login without token, force logout
+			this.userService.logout();
+			return Promise.reject('No auth token');
+		}
+		const response = await callback();
+		switch (response.code) {
+			case 0:
+				return response.data;
+			case 111: // TokenExpired
+				this.userService.logout();
+				return Promise.reject('Token expired');
 		}
 		throw new CaffeineError(response.message, response.code);
 	}

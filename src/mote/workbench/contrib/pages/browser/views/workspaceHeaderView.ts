@@ -1,16 +1,17 @@
 import * as nls from 'vs/nls';
 import { registerIcon } from 'mote/platform/theme/common/iconRegistry';
 import { Codicon } from 'vs/base/common/codicons';
-import { ThemeIcon } from 'mote/platform/theme/common/themeService';
+import { IThemeService, ThemeIcon } from 'mote/platform/theme/common/themeService';
 import { $, append } from 'vs/base/browser/dom';
 import { Disposable } from 'vs/base/common/lifecycle';
+import { iconBackground } from 'mote/platform/theme/common/themeColors';
 
 const workspacesPickerIcon = registerIcon('workspace-picker', Codicon.foldDown, nls.localize('viewPaneContainerCollapsedIcon', 'Icon for a collapsed view pane container.'));
 
 
 export class WorkspaceHeaderView extends Disposable {
 
-	constructor() {
+	constructor(private readonly themeService: IThemeService) {
 		super();
 	}
 
@@ -39,15 +40,18 @@ export class WorkspaceHeaderView extends Disposable {
 	}
 
 	createIcon(title: string) {
+		const backgroundColor = this.themeService.getColorTheme().getColor(iconBackground);
 		const iconContainer = document.createElement('div');
 		iconContainer.style.borderRadius = '3px';
 		iconContainer.style.height = '18px';
 		iconContainer.style.width = '18px';
-		iconContainer.style.backgroundColor = 'rgb(137, 137, 137)';
 		iconContainer.style.alignItems = 'center';
 		iconContainer.style.justifyContent = 'center';
 		iconContainer.style.display = 'flex';
 		iconContainer.style.marginRight = '8px';
+		if (backgroundColor) {
+			iconContainer.style.backgroundColor = backgroundColor.toString();
+		}
 
 		const icon = document.createElement('div');
 		icon.style.lineHeight = '1';

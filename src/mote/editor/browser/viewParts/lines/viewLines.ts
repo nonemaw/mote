@@ -3,31 +3,40 @@ import { ViewContext } from 'mote/editor/browser/view/viewContext';
 import { ViewController } from 'mote/editor/browser/view/viewController';
 import { IVisibleLinesHost } from 'mote/editor/browser/view/viewLayer';
 import { ViewPart } from 'mote/editor/browser/view/viewPart';
-import { EmptyViewLine, ViewLine } from 'mote/editor/browser/viewParts/lines/viewLine';
-import { ViewLinesChangedEvent, ViewLinesDeletedEvent, ViewLinesInsertedEvent } from 'mote/editor/common/viewEvents';
+import { ViewLine } from 'mote/editor/browser/viewParts/lines/viewLine';
+import * as viewEvents from 'mote/editor/common/viewEvents';
 import { ViewportData } from 'mote/editor/common/viewLayout/viewLinesViewportData';
 import { clearNode } from 'vs/base/browser/dom';
 import { createFastDomNode, FastDomNode } from 'vs/base/browser/fastDomNode';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { StoreUtils } from 'mote/platform/store/common/storeUtils';
+import { ConfigurationChangedEvent } from 'mote/editor/common/config/editorOptions';
 
 export class ViewLines extends ViewPart implements IVisibleLinesHost<ViewLine> {
 
 	private domNode: FastDomNode<HTMLElement>;
 
+	private readonly viewController: ViewController;
 	private lines: ViewLine[] = [];
 
 	constructor(
 		context: ViewContext,
-		private readonly viewController: ViewController,
-		linesContent: FastDomNode<HTMLElement>,
+
+		private readonly linesContent: FastDomNode<HTMLElement>,
 		@IInstantiationService private instantiationService: IInstantiationService,
 	) {
 		super(context);
+		this.viewController = context.controller;
 
 		this.domNode = createFastDomNode(document.createElement('div'));
 		this.domNode.setClassName('view-lines');
 		this.domNode.setAttribute('data-root', '');
+		this.domNode.domNode.style.lineHeight = '1.5';
+		this.domNode.domNode.style.fontSize = '16px';
+
+		this._register(this.context.contentStore.onDidUpdate(() => {
+			this.renderLines({});
+		}));
 	}
 
 	public getDomNode(): FastDomNode<HTMLElement> {
@@ -46,6 +55,7 @@ export class ViewLines extends ViewPart implements IVisibleLinesHost<ViewLine> {
 	}
 
 	public renderLines(viewportData: ViewportData) {
+		// (1) render lines - ensures lines are in the DOM
 		const pageIds: string[] = this.context.contentStore.getValue() || [];
 		clearNode(this.domNode.domNode);
 		pageIds.forEach((pageId, idx) => {
@@ -70,25 +80,37 @@ export class ViewLines extends ViewPart implements IVisibleLinesHost<ViewLine> {
 			}));
 
 		});
-		if (pageIds.length === 0) {
-			const line = new EmptyViewLine(this.viewController);
-			line.renderLine();
-			this.domNode.domNode.appendChild(line.getDomNode());
-		}
+
+		// (2) compute horizontal scroll position:
+		//  - this must happen after the lines are in the DOM since it might need a line that rendered just now
+		//  - it might change `scrollWidth` and `scrollLeft`
+
+		// (3) handle scrolling
+		const adjustedScrollTop = this.context.viewLayout.getCurrentScrollTop();
+		this.linesContent.setTop(-adjustedScrollTop);
+
+		// TODO fixme, use it to let viewlayout know the content change
+		this.context.viewLayout.onConfigurationChanged(new ConfigurationChangedEvent([]));
 	}
 
 	//#region view events handler
 
-	public override onLinesInserted(e: ViewLinesInsertedEvent): boolean {
+	public override onLinesInserted(e: viewEvents.ViewLinesInsertedEvent): boolean {
 		return true;
 	}
 
-	public override onLinesDeleted(e: ViewLinesDeletedEvent): boolean {
+	public override onLinesDeleted(e: viewEvents.ViewLinesDeletedEvent): boolean {
 		return true;
 	}
 
-	public override onLinesChanged(e: ViewLinesChangedEvent): boolean {
+	public override onLinesChanged(e: viewEvents.ViewLinesChangedEvent): boolean {
 		return true;
+	}
+
+	public override onScrollChanged(e: viewEvents.ViewScrollChangedEvent): boolean {
+		const adjustedScrollTop = this.context.viewLayout.getCurrentScrollTop();
+		this.linesContent.setTop(-adjustedScrollTop);
+		return false;
 	}
 
 	//#endregion

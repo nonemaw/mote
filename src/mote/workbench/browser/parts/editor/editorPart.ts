@@ -15,13 +15,16 @@ import { IEditorService } from 'mote/workbench/services/editor/common/editorServ
 import { EditorPanes } from 'mote/workbench/browser/parts/editor/editorPanes';
 import { CSSProperties } from 'mote/base/browser/jsx/style';
 import { EditorInput } from 'mote/workbench/common/editorInput';
+import { IResourceEditorInput } from 'mote/platform/editor/common/editor';
+import { IEditorResolverService } from 'mote/workbench/services/editor/common/editorResolverService';
+import { editorBackground } from 'mote/platform/theme/common/themeColors';
 
 export class EditorPart extends Part implements IEditorService {
 
 	declare readonly _serviceBrand: undefined;
 
 	get minimumWidth(): number {
-		return 800;
+		return 400;
 	}
 
 	get maximumWidth(): number {
@@ -52,11 +55,17 @@ export class EditorPart extends Part implements IEditorService {
 		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
 		@ILogService logService: ILogService,
+		@IEditorResolverService private readonly editorResolverService: IEditorResolverService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService
 	) {
 		super(Parts.EDITOR_PART, { hasTitle: false }, themeService, layoutService);
 		this.container = document.createElement('div');
 		this.editorPanes = this._register(this.instantiationService.createInstance(EditorPanes, this.container));
+	}
+
+	async openEditorWithResource(editor: IResourceEditorInput): Promise<IEditorPane | undefined> {
+		const input = await this.editorResolverService.resolveEditor(editor);
+		return this.openEditor(input);
 	}
 
 	openEditor(editor: EditorInput): Promise<IEditorPane | undefined> {
@@ -84,7 +93,7 @@ export class EditorPart extends Part implements IEditorService {
 	override createContentArea(parent: HTMLElement) {
 		// Container
 		this.element = parent;
-		this.element.style.backgroundColor = ThemedStyles.contentBackground.dark;
+		this.element.style.backgroundColor = this.getColor(editorBackground) || '';
 
 		this.container!.classList.add('content');
 		parent.appendChild(this.container!);

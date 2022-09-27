@@ -4,7 +4,7 @@ import { get } from './commandFacade';
 import { Pointer, RecordValue, Role } from 'mote/platform/store/common/record';
 import RecordCacheStore from './recordCacheStore';
 import { IStoreService } from 'mote/platform/store/common/store';
-import { Permission } from 'mote/platform/store/common/permission';
+import { PermissionUtils } from 'mote/platform/store/common/permissionUtils';
 
 
 interface RecordStoreState<T> {
@@ -36,8 +36,8 @@ export default class RecordStore<T = any> extends Disposable {
 	path: string[];
 	recordStoreParentStore?: RecordStore;
 	inMemoryRecordCacheStore: RecordCacheStore;
-	childStoreMap: { [key: string]: RecordStore } = {};
-	instanceState!: RecordStoreState<T>;
+	private childStoreMap: { [key: string]: RecordStore } = {};
+	private instanceState!: RecordStoreState<T>;
 
 	//#region static method
 
@@ -78,7 +78,7 @@ export default class RecordStore<T = any> extends Disposable {
 		this.instanceState = {} as any;
 		this.inMemoryRecordCacheStore = props.inMemoryRecordCacheStore || RecordCacheStore.Default;
 
-		if (this.isDefaultRecordCache() && this.userId !== 'local') {
+		if (this.isDefaultRecordCache()) {
 			storeService.addSubscription(this.userId, this.pointer);
 		}
 
@@ -144,15 +144,15 @@ export default class RecordStore<T = any> extends Disposable {
 	//#region permission
 
 	canRead() {
-		return Permission.canRead(this.getRole());
+		return PermissionUtils.canRead(this.getRole());
 	}
 
 	canComment() {
-		return Permission.canComment(this.getRole());
+		return PermissionUtils.canComment(this.getRole());
 	}
 
 	canEdit() {
-		return Permission.canEdit(this.getRole());
+		return PermissionUtils.canEdit(this.getRole());
 	}
 
 	//#endregion

@@ -20,18 +20,19 @@ class QuickActionViewItem extends ActionViewItem {
 	override render(container: HTMLElement) {
 		super.render(container);
 		container.style.height = '100%';
-
 	}
 
 	override createLabel() {
 		if (this.element) {
 			const child = document.createElement('span');
 			child.innerText = this.action.label;
-			//setStyles(child, options.style);
 
 			this.btn = new Button(this.element, { style: this.getButtonStyle() });
 			this.btn.setChildren(child);
 			this.label = this.btn.element;
+			if (this.action.class) {
+				this.label.className = this.action.class;
+			}
 		}
 	}
 
@@ -112,5 +113,9 @@ export class QuickMenu extends ActionBar implements IMenuLike {
 
 	private doGetActionViewItem(action: IAction, options: IMenuLikeOptions, parentData: ISubMenuData): BaseActionViewItem {
 		return new QuickActionViewItem(options.context, action, options);
+	}
+
+	style() {
+
 	}
 }

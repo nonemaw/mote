@@ -51,7 +51,7 @@ export class QuickMenuService extends BrowserContextViewBasedService implements 
 				options.showPointer = false;
 				const hoverOptions = options as any;
 				const hoverTarget: IHoverTarget = {
-					x: rect.left - width / 4, y: rect.top - height - 10, targetElements: [target],
+					x: rect.left - width / 4, y: rect.top - height + 20, targetElements: [target],
 					dispose: () => { }
 				};
 				return hoverService.showHover({ ...hoverOptions, target: hoverTarget }, focus);

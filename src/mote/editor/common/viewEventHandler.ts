@@ -40,6 +40,16 @@ export class ViewEventHandler extends Disposable {
 						shouldRender = true;
 					}
 					break;
+				case viewEvents.ViewEventType.ViewScrollChanged:
+					if (this.onScrollChanged(e)) {
+						shouldRender = true;
+					}
+					break;
+				case viewEvents.ViewEventType.ViewConfigurationChanged:
+					if (this.onConfigurationChanged(e)) {
+						shouldRender = true;
+					}
+					break;
 				case viewEvents.ViewEventType.ViewLinesDeleted:
 					if (this.onLinesDeleted(e)) {
 						shouldRender = true;
@@ -53,6 +63,10 @@ export class ViewEventHandler extends Disposable {
 		}
 	}
 
+	public onConfigurationChanged(e: viewEvents.ViewConfigurationChangedEvent): boolean {
+		return false;
+	}
+
 	public onLinesChanged(e: viewEvents.ViewLinesChangedEvent): boolean {
 		return false;
 	}
@@ -60,6 +74,10 @@ export class ViewEventHandler extends Disposable {
 		return false;
 	}
 	public onLinesInserted(e: viewEvents.ViewLinesInsertedEvent): boolean {
+		return false;
+	}
+
+	public onScrollChanged(e: viewEvents.ViewScrollChangedEvent): boolean {
 		return false;
 	}
 }

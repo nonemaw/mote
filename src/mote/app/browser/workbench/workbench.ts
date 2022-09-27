@@ -150,7 +150,7 @@ class WorkspaceProvider implements IWorkspaceProvider {
 						// when connected to a remote and having a value
 						// that is a path (begins with a `/`), assume this
 						// is a vscode-remote resource as simplified URL.
-						workspace = { folderUri: URI.from({ scheme: Schemas.vscodeRemote, path: value, authority: config.remoteAuthority }) };
+						workspace = { folderUri: URI.from({ scheme: Schemas.moteRemote, path: value, authority: config.remoteAuthority }) };
 					} else {
 						workspace = { folderUri: URI.parse(value) };
 					}
@@ -192,6 +192,7 @@ class WorkspaceProvider implements IWorkspaceProvider {
 		if (!foundWorkspace) {
 			if (config.folderUri) {
 				workspace = { folderUri: URI.revive(config.folderUri) };
+				payload = [['openFile', workspace.folderUri]];
 			} else if (config.workspaceUri) {
 				workspace = { workspaceUri: URI.revive(config.workspaceUri) };
 			}
@@ -301,11 +302,11 @@ class WorkspaceProvider implements IWorkspaceProvider {
 	hasRemote(): boolean {
 		if (this.workspace) {
 			if (isFolderToOpen(this.workspace)) {
-				return this.workspace.folderUri.scheme === Schemas.vscodeRemote;
+				return this.workspace.folderUri.scheme === Schemas.moteRemote;
 			}
 
 			if (isWorkspaceToOpen(this.workspace)) {
-				return this.workspace.workspaceUri.scheme === Schemas.vscodeRemote;
+				return this.workspace.workspaceUri.scheme === Schemas.moteRemote;
 			}
 		}
 
@@ -315,13 +316,18 @@ class WorkspaceProvider implements IWorkspaceProvider {
 
 (function () {
 
-	// Find config by checking for DOM
-	const configElement = document.getElementById('vscode-workbench-web-configuration');
-	const configElementAttribute = configElement ? configElement.getAttribute('data-settings') : undefined;
-	if (!configElement || !configElementAttribute) {
-		throw new Error('Missing web configuration element');
+	// Find config by checking location
+	let folderUri: UriComponents | undefined;
+	let workspaceUri: UriComponents | undefined;
+	const pathName = globalThis.window.location.pathname;
+	if (pathName === '/') {
+		workspaceUri = { scheme: Schemas.moteRemote, authority: '', path: '', query: '', fragment: '' };
+	} else {
+		folderUri = { scheme: Schemas.moteRemote, authority: '', path: pathName, query: '', fragment: '' };
 	}
-	const config: IWorkbenchConstructionOptions & { folderUri?: UriComponents; workspaceUri?: UriComponents; callbackRoute: string } = JSON.parse(configElementAttribute);
+	const config: IWorkbenchConstructionOptions & { folderUri?: UriComponents; workspaceUri?: UriComponents; callbackRoute: string } = {
+		workspaceUri, folderUri, callbackRoute: ''
+	};
 
 	// Create workbench
 	create(document.body, {

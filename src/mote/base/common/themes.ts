@@ -89,7 +89,7 @@ export const ThemedColors = {
 	uiLightBorder: "#F2F1F0",
 	uiLightGray: "#C4C4C4",
 	regularTextColor: defaultLightWithAlpha(1),
-}
+};
 
 export const ThemedStyles = {
 
@@ -120,7 +120,7 @@ export const ThemedStyles = {
 	},
 	mediumIconColor: {
 		light: defaultLightWithAlpha(.4),
-		dark: ThemedBase.dark.lightgray.alpha(.6).css()
+		dark: ThemedBase.dark.lightgray.alpha(.6).hex()
 	},
 	lightIconColor: {
 		light: defaultLightWithAlpha(.3),
@@ -133,8 +133,8 @@ export const ThemedStyles = {
 	},
 
 	darkDividerColor: {
-		light: ThemedBase.light.darkgray.alpha(.16).css(),
-		dark: ThemedBase.dark.white.alpha(.14).css()
+		light: ThemedBase.light.darkgray.alpha(.16).hex(),
+		dark: ThemedBase.dark.white.alpha(.14).hex()
 	},
 
 	sidebarTextColor: {
@@ -162,8 +162,8 @@ export const ThemedStyles = {
 		dark: "rgb(55, 60, 63)"
 	},
 	buttonHoveredBackground: {
-		light: ThemedBase.light.darkgray.alpha(.08).css(),
-		dark: ThemedBase.dark.darkgray.brighten(.6).css()
+		light: ThemedBase.light.darkgray.alpha(.08).hex(),
+		dark: ThemedBase.dark.darkgray.brighten(.6).hex()
 	},
 
 	buttonPressedBackground: {

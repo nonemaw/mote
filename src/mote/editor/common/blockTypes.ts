@@ -1,53 +1,34 @@
+import { BlockTypes } from 'mote/platform/store/common/record';
 
-
-const blockTypes = {
-	text: "text",
-	quote: 'quote',
-	todo: 'todo',
-	code: "code",
-	image: "image",
-	header: 'header',
-	heading2: 'heading2',
-	heading3: 'heading3',
-	page: "page",
-	subHeader: "sub_header",
-	secondLevelHeader: "second_level_header",
-	thridLevelHeader: "thrid_level_header",
-	fourthLevelHeader: "fourth_level_header",
-	fifthLevelHeaderBlock: "fifth_level_header",
-	sixthLevelHeaderBlock: "sixth_level_header"
-};
+export const keepLineTypes = new Set([
+	BlockTypes.todo,
+	BlockTypes.bulletedList,
+]);
 
 export const textBasedTypes = new Set([
-	blockTypes.header,
-	blockTypes.quote,
-	blockTypes.todo,
-	blockTypes.heading2,
-	blockTypes.heading3,
-	blockTypes.secondLevelHeader,
-	blockTypes.thridLevelHeader,
-	blockTypes.fourthLevelHeader,
-	blockTypes.fifthLevelHeaderBlock,
-	blockTypes.sixthLevelHeaderBlock,
+	BlockTypes.header,
+	BlockTypes.quote,
+	BlockTypes.todo,
+	BlockTypes.heading2,
+	BlockTypes.heading3,
+	BlockTypes.heading4,
+	BlockTypes.code,
+	BlockTypes.bulletedList,
 ]);
 
 export const pureTextTypes = new Set([
-	blockTypes.text,
-	blockTypes.header,
-	blockTypes.secondLevelHeader,
-	blockTypes.thridLevelHeader,
-	blockTypes.fourthLevelHeader,
-	blockTypes.fifthLevelHeaderBlock,
-	blockTypes.sixthLevelHeaderBlock,
+	BlockTypes.text,
+	BlockTypes.header,
+	BlockTypes.heading2,
+	BlockTypes.heading3,
+	BlockTypes.heading4,
 ]);
 
 export const mediaTypes = new Set([
-	blockTypes.image
+	BlockTypes.image
 ]);
 
 export const contentTypes = new Set([
 	...mediaTypes,
-	blockTypes.code
-])
-
-export default blockTypes;
+	BlockTypes.code
+]);

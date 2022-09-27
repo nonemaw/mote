@@ -4,11 +4,11 @@ export type IAnnotation = [string];
 export type ISegment = [string, IAnnotation[]?];
 
 export function getFirstInArray<T>(e: T[]) {
-	return e[0]
+	return e[0];
 }
 
 export function getSecondArrayInArray(e: any[]) {
-	return e && e[1] && e[1] || []
+	return e && e[1] && e[1] || [];
 }
 
 export function combineArray(e: any, t: any[]) {
@@ -33,20 +33,34 @@ export function merge(record: ISegment[], segments: ISegment[], startIndex: numb
 			const content = getFirstInArray(segment) as string;
 			const annotations = getSecondArrayInArray(segment) as IAnnotation[];
 			const contentInArray = Array.from(content);
-			let currentBias = bias;
-			let endIndex = bias + contentInArray.length;
+			const currentBias = bias;
+			const endIndex = bias + contentInArray.length;
+			// The cursor index greater than last segment postion and less than current segment end position
+			// [prevSegment]([contentBefore](cursor)[contentAfter])[Next]
 			if (startIndex >= currentBias && startIndex <= endIndex && !flag) {
 				const index = startIndex - currentBias;
 				const contentBefore = sliceArray(contentInArray, 0, index);
 				const contentAfter = sliceArray(contentInArray, index);
 				if (contentBefore.length > 0) {
-					newRecord.push(combineArray(contentBefore.join(""), annotations) as ISegment);
+					newRecord.push(combineArray(contentBefore.join(''), annotations) as ISegment);
 				}
 				for (const newSegment of segments) {
-					newRecord.push(newSegment);
+					if (newRecord.length > 0) {
+						const prevRecord = newRecord[newRecord.length - 1];
+						const currentAnnotations = getSecondArrayInArray(newSegment) as IAnnotation[];
+						const prevAnnotations = getSecondArrayInArray(prevRecord);
+						if (annotationsEqual(prevAnnotations, currentAnnotations)) {
+							// Merge prev segment with same annotations
+							prevRecord[0] = prevRecord[0] + newSegment[0];
+						} else {
+							newRecord.push(newSegment);
+						}
+					} else {
+						newRecord.push(newSegment);
+					}
 				}
 				if (contentAfter.length > 0) {
-					newRecord.push(combineArray(contentAfter.join(""), annotations) as ISegment);
+					newRecord.push(combineArray(contentAfter.join(''), annotations) as ISegment);
 				}
 				flag = true;
 			} else {
@@ -67,8 +81,8 @@ export function remove(record: ISegment[], startIndex: number, endIndex: number)
 		const content = getFirstInArray(segment) as string;
 		const annotations = getSecondArrayInArray(segment) as IAnnotation[];
 		const contentInArray = Array.from(content);
-		let currentOffset = offset;
-		let currentEndIndex = offset + contentInArray.length;
+		const currentOffset = offset;
+		const currentEndIndex = offset + contentInArray.length;
 		// case 1: the content that need to removed not in current segment
 		if (currentEndIndex <= startIndex && currentEndIndex <= endIndex || currentOffset >= startIndex && currentOffset >= endIndex) {
 			newRecord.push(segment);
@@ -139,4 +153,21 @@ export function slice(record: ISegment[], startIndex: number, endIndex: number) 
  */
 export function collectValueFromSegment(segments: ISegment[]) {
 	return emptyOrArray(segments).map(segment => getFirstInArray(segment)).join('');
+}
+
+export function annotationsEqual(value: IAnnotation[], other: IAnnotation[]) {
+	if (value && other) {
+		if (value.length !== other.length) {
+			return false;
+		}
+		value.sort();
+		other.sort();
+		for (let i = 0; i < value.length; i++) {
+			if (value[i][0] !== other[i][0]) {
+				return false;
+			}
+		}
+		return true;
+	}
+	return false;
 }

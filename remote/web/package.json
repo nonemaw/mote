@@ -9,6 +9,7 @@
 		"@vscode/vscode-languagedetection": "1.0.21",
 		"chroma-js": "^2.4.2",
 		"jschardet": "3.0.0",
+		"prismjs": "^1.28.0",
 		"tas-client-umd": "0.1.6",
 		"vscode-oniguruma": "1.6.1",
 		"vscode-textmate": "7.0.1",

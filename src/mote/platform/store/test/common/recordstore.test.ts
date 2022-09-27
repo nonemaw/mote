@@ -1,6 +1,0 @@
-suite('Store - RecordStore', () => {
-
-	test('', () => {
-
-	});
-});

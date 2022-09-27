@@ -1,6 +1,7 @@
 import * as assert from 'assert';
+import { EditorConfiguration } from 'mote/editor/browser/config/editorConfiguration';
 import { ViewController } from 'mote/editor/browser/view/viewController';
-import { collectValueFromSegment } from 'mote/editor/common/segmentUtils';
+import { collectValueFromSegment, ISegment } from 'mote/editor/common/segmentUtils';
 import BlockStore from 'mote/platform/store/common/blockStore';
 import { Pointer } from 'mote/platform/store/common/record';
 import RecordCacheStore from 'mote/platform/store/common/recordCacheStore';
@@ -33,11 +34,12 @@ suite('Editor Controller - View Controller Commands', () => {
 		viewController.type('1');
 
 		const lineStore = StoreUtils.createStoreForLineNumber(lineNumber, contentStore);
-		assert.equal('1', collectValueFromSegment(lineStore.getTitleStore().getValue()));
+		let segments: ISegment[] = lineStore.getTitleStore().getValue();
+		assert.equal('1', collectValueFromSegment(segments));
 
 		// move selection to doesn't exist line
 		lineNumber++;
-		const selection = viewController.getSelection();
+		let selection = viewController.getSelection();
 		selection.lineNumber = lineNumber;
 		viewController.select(selection);
 
@@ -45,7 +47,19 @@ suite('Editor Controller - View Controller Commands', () => {
 		viewController.type('12');
 
 		// nothing changed due to invalid line move
-		assert.equal('1', collectValueFromSegment(lineStore.getTitleStore().getValue()));
+		segments = lineStore.getTitleStore().getValue();
+		assert.equal('1', collectValueFromSegment(segments));
+
+		// Move back
+		selection = viewController.getSelection();
+		selection.lineNumber = 0;
+		viewController.select(selection);
+
+		// type more character
+		viewController.type('12');
+
+		segments = lineStore.getTitleStore().getValue();
+		assert.equal(1, segments.length);
 
 	});
 
@@ -74,9 +88,10 @@ suite('Editor Controller - View Controller Commands', () => {
 	});
 });
 
-function createViewController(): [ViewController, RecordStore<string[]>] {
+export function createViewController(): [ViewController, RecordStore<string[]>] {
+	const config = new EditorConfiguration({}, document.createElement('div'));
 	const store = new BlockStore({ table: 'page', id: '1' }, '1', [], RecordCacheStore.Default, storeService);
 	const contentStore = store.getContentStore();
-	const viewController = new ViewController(contentStore);
+	const viewController = new ViewController(config, contentStore);
 	return [viewController, contentStore];
 }

@@ -1,6 +1,8 @@
 import { IMenuLike } from 'mote/base/browser/ui/menu/menu';
+import { IntlProvider } from 'mote/base/common/i18n';
 import { IContextViewService } from 'mote/platform/contextview/browser/contextView';
 import { BrowserContextViewBasedService } from 'mote/platform/contextview/browser/contextViewBasedService';
+import { IThemeService } from 'mote/platform/theme/common/themeService';
 import { IWorkspaceContextService } from 'mote/platform/workspace/common/workspace';
 import { WorkspaceHeaderView } from 'mote/workbench/contrib/pages/browser/views/workspaceHeaderView';
 import { WorkspacesPicker } from 'mote/workbench/contrib/pages/browser/views/workspacesPicker';
@@ -20,23 +22,24 @@ export class WorkspacesController extends BrowserContextViewBasedService {
 
 	constructor(
 		private readonly container: HTMLElement,
+		@IThemeService themeService: IThemeService,
 		@IContextViewService contextViewService: IContextViewService,
 		@IWorkspaceContextService private readonly workspaceService: IWorkspaceContextService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 	) {
-		super(null as any, contextViewService);
+		super(themeService, contextViewService);
 
 		container.style.height = '45px';
 		container.style.alignItems = 'center';
 		container.style.display = 'flex';
 		container.style.cursor = 'pointer';
 
-		this.headerView = new WorkspaceHeaderView();
+		this.headerView = new WorkspaceHeaderView(themeService);
 		this.headerView.create(container, this.getTitle());
 
 		this._register(workspaceService.onDidChangeWorkspace(() => {
 			clearNode(container);
-			this.headerView = new WorkspaceHeaderView();
+			this.headerView = new WorkspaceHeaderView(themeService);
 			this.headerView.create(container, this.getTitle());
 		}));
 
@@ -65,6 +68,6 @@ export class WorkspacesController extends BrowserContextViewBasedService {
 		if (spaceStore) {
 			return spaceStore && spaceStore.getSpaceName() || 'Untitled Space';
 		}
-		return 'Create a new space';
+		return IntlProvider.INSTANCE.formatMessage({ id: 'sidebar.createWorkspace', defaultMessage: 'Create a new space' });
 	}
 }

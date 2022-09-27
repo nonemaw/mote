@@ -12,7 +12,7 @@ import { BrowserWorkbenchEnvironmentService, IBrowserWorkbenchEnvironmentService
 import { Workbench } from 'mote/workbench/browser/workbench';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { IProductService } from 'vs/platform/product/common/productService';
-import product from 'vs/platform/product/common/product';
+import product from 'mote/platform/product/common/product';
 import { RemoteAuthorityResolverService } from 'vs/platform/remote/browser/remoteAuthorityResolverService';
 import { IRemoteAuthorityResolverService } from 'vs/platform/remote/common/remoteAuthorityResolver';
 import { IWorkbenchFileService } from 'vs/workbench/services/files/common/files';
@@ -30,7 +30,7 @@ import { BufferLogService } from 'vs/platform/log/common/bufferLog';
 import { FileLogger } from 'vs/platform/log/common/fileLog';
 import { toLocalISOString } from 'vs/base/common/date';
 import { isWorkspaceToOpen, isFolderToOpen } from 'vs/platform/window/common/window';
-import { getSingleFolderWorkspaceIdentifier, getWorkspaceIdentifier } from 'vs/workbench/services/workspaces/browser/workspaces';
+import { getSingleFolderWorkspaceIdentifier, getWorkspaceIdentifier } from 'mote/workbench/services/workspaces/browser/workspaces';
 import { coalesce } from 'vs/base/common/arrays';
 import { InMemoryFileSystemProvider } from 'vs/platform/files/common/inMemoryFilesystemProvider';
 import { ICommandService } from 'vs/platform/commands/common/commands';
@@ -197,12 +197,14 @@ export class BrowserMain extends Disposable {
 		serviceCollection.set(IStorageService, storageService);
 
 		// Remote
-		const remoteService = new RemoteService(environmentService);
+		const remoteService = new RemoteService(productService);
 		serviceCollection.set(IRemoteService, remoteService);
 
 		// User
 		const userService = new UserService(storageService, remoteService);
 		serviceCollection.set(IUserService, userService);
+
+		remoteService.userService = userService;
 
 		// Workspace
 		//const workspaceService = await this.createWorkspaceService(userService, remoteService, storageService, logService);

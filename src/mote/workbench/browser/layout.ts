@@ -1,7 +1,7 @@
 /* eslint-disable code-no-unexternalized-strings */
-import { Disposable } from "vs/base/common/lifecycle";
+import { Disposable, DisposableStore } from 'vs/base/common/lifecycle';
 import { IWorkbenchLayoutService, Parts } from "mote/workbench/services/layout/browser/layoutService";
-import { Dimension, getClientArea, IDimension, position, size } from "vs/base/browser/dom";
+import { Dimension, getClientArea, IDimension, isAncestorUsingFlowTo, position, size } from "vs/base/browser/dom";
 import { Part } from "./part";
 import { Emitter } from "vs/base/common/event";
 import { ILogService } from "vs/platform/log/common/log";
@@ -11,6 +11,56 @@ import { DeferredPromise, Promises } from "vs/base/common/async";
 import { IViewDescriptorService, ViewContainerLocation } from "../common/views";
 import { ISerializableView, ISerializedGrid, ISerializedLeafNode, ISerializedNode, Orientation, SerializableGrid } from "vs/base/browser/ui/grid/grid";
 import { mark } from "vs/base/common/performance";
+import { ILifecycleService } from 'mote/workbench/services/lifecycle/common/lifecycle';
+import { IBrowserWorkbenchEnvironmentService } from 'vs/workbench/services/environment/browser/environmentService';
+import { IPath } from 'vs/platform/window/common/window';
+import { pathToEditor } from 'mote/workbench/common/editor';
+import { IResourceEditorInput } from 'mote/platform/editor/common/editor';
+import { IEditorService } from 'mote/workbench/services/editor/common/editorService';
+
+interface IWorkbenchLayoutWindowInitializationState {
+	views: {
+		defaults: string[] | undefined;
+		containerToRestore: {
+			sideBar?: string;
+			panel?: string;
+			auxiliaryBar?: string;
+		};
+	};
+	editor: {
+		restoreEditors: boolean;
+		editorToOpen: Promise<IResourceEditorInput | undefined>;
+	};
+}
+
+interface IWorkbenchLayoutWindowRuntimeState {
+	fullscreen: boolean;
+	maximized: boolean;
+	hasFocus: boolean;
+	windowBorder: boolean;
+	menuBar: {
+		toggled: boolean;
+	};
+	zenMode: {
+		transitionDisposables: DisposableStore;
+	};
+}
+
+interface IWorkbenchLayoutWindowState {
+	runtime: IWorkbenchLayoutWindowRuntimeState;
+	initialization: IWorkbenchLayoutWindowInitializationState;
+}
+
+enum WorkbenchLayoutClasses {
+	SIDEBAR_HIDDEN = 'nosidebar',
+	EDITOR_HIDDEN = 'noeditorarea',
+	PANEL_HIDDEN = 'nopanel',
+	AUXILIARYBAR_HIDDEN = 'noauxiliarybar',
+	STATUSBAR_HIDDEN = 'nostatusbar',
+	FULLSCREEN = 'fullscreen',
+	MAXIMIZED = 'maximized',
+	WINDOW_BORDER = 'border'
+}
 
 export abstract class Layout extends Disposable implements IWorkbenchLayoutService {
 
@@ -40,11 +90,17 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 
 	protected logService!: ILogService;
 
+	private sideBarPartView!: ISerializableView;
+
 	//#region workbench services
+	private editorService!: IEditorService;
+	private environmentService!: IBrowserWorkbenchEnvironmentService;
 	private paneCompositeService!: IPaneCompositePartService;
 	private viewDescriptorService!: IViewDescriptorService;
 
 	//#endregion
+
+	private windowState!: IWorkbenchLayoutWindowState;
 
 	private disposed = false;
 
@@ -56,24 +112,75 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 
 	isVisible(part: Parts): boolean {
 		if (this.initialized) {
-
+			switch (part) {
+				case Parts.SIDEBAR_PART:
+					return true;
+			}
 		}
 		return true;
 	}
 
 	setPartHidden(hidden: boolean, part: Parts.SIDEBAR_PART | Parts.EDITOR_PART): void {
-		//throw new Error("Method not implemented.");
+		switch (part) {
+			case Parts.SIDEBAR_PART:
+				return this.setSideBarHidden(hidden);
+		}
 	}
 
 	protected initLayout(accessor: ServicesAccessor): void {
 		this.logService.debug("[Layout] initLayout");
 		// Services
 		//const themeService = accessor.get(IThemeService);
+		this.environmentService = accessor.get(IBrowserWorkbenchEnvironmentService);
 
+		// Parts
+		this.editorService = accessor.get(IEditorService);
 		this.paneCompositeService = accessor.get(IPaneCompositePartService);
 		this.viewDescriptorService = accessor.get(IViewDescriptorService);
+
+		// State
+		this.initLayoutState(accessor.get(ILifecycleService), accessor);
 	}
 
+	private initLayoutState(lifecycleService: ILifecycleService, accessor: ServicesAccessor) {
+
+		// Window Initialization State
+		const initialPageToOpen = this.getInitialPageToOpen();
+		const windowInitializationState: IWorkbenchLayoutWindowInitializationState = {
+			editor: {
+				restoreEditors: false, //this.shouldRestoreEditors(this.contextService, initialFilesToOpen),
+				editorToOpen: this.resolveEditorToOpen(initialPageToOpen, accessor)
+			},
+			views: {
+				defaults: undefined,// this.getDefaultLayoutViews(this.environmentService, this.storageService),
+				containerToRestore: {}
+			}
+		};
+
+		this.windowState = {
+			initialization: windowInitializationState,
+			runtime: null as any //windowRuntimeState,
+		};
+
+		// Sidebar View Container To Restore
+		if (this.isVisible(Parts.SIDEBAR_PART)) {
+			if (!initialPageToOpen) {
+				this.windowState.initialization.views.containerToRestore.sideBar = 'workbench.explorer.pageView';
+			}
+		}
+	}
+
+	private async resolveEditorToOpen(initialPageToOpen: IPath | undefined, accessor: ServicesAccessor): Promise<IResourceEditorInput | undefined> {
+		if (initialPageToOpen) {
+			return await pathToEditor(initialPageToOpen, accessor);
+		}
+		return undefined;
+	}
+
+	private getInitialPageToOpen() {
+		const pages = this.environmentService.filesToOpenOrCreate;
+		return pages ? pages[0] : undefined;
+	}
 
 	focus(): void {
 		throw new Error("Method not implemented.");
@@ -98,6 +205,9 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 		const activityBar = this.getPart(Parts.ACTIVITYBAR_PART);
 
 		this.activityBarPartView = activityBar;
+
+		// View references for all parts
+		this.sideBarPartView = sideBar;
 
 		const viewMap: { [key: string]: Part } = {
 			[Parts.ACTIVITYBAR_PART]: activityBar,
@@ -161,11 +271,38 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 		layoutReadyPromises.push((async () => {
 			mark('code/willRestoreEditors');
 
+			const editor = await this.windowState.initialization.editor.editorToOpen;
+			let openEditorPromise: Promise<unknown> | undefined = undefined;
+			if (editor) {
+				openEditorPromise = this.editorService.openEditorWithResource(editor);
+			}
+			// do not block the overall layout ready flow from potentially
+			// slow editors to resolve on startup
+			layoutRestoredPromises.push(
+				Promise.all([
+					openEditorPromise,
+					//this.editorGroupService.whenRestored
+				]).finally(() => {
+					// the `code/didRestoreEditors` perf mark is specifically
+					// for when visible editors have resolved, so we only mark
+					// if when editor group service has restored.
+					mark('code/didRestoreEditors');
+				})
+			);
 		})());
 
 		// Restore Sidebar
 		layoutReadyPromises.push((async () => {
-			let viewlet = null;// await this.paneCompositeService.openPaneComposite(FILES_VIEWLET_ID, ViewContainerLocation.Sidebar);
+
+			// Restoring views could mean that sidebar already
+			// restored, as such we need to test again
+			//await restoreDefaultViewsPromise;
+			if (!this.windowState.initialization.views.containerToRestore.sideBar) {
+				this.setSideBarHidden(true, true);
+				return;
+			}
+
+			let viewlet = await this.paneCompositeService.openPaneComposite(this.windowState.initialization.views.containerToRestore.sideBar, ViewContainerLocation.Sidebar);
 			if (!viewlet) {
 				viewlet = await this.paneCompositeService.openPaneComposite(
 					this.viewDescriptorService.getDefaultViewContainer(ViewContainerLocation.Sidebar)?.id, ViewContainerLocation.Sidebar); // fallback to default viewlet as needed
@@ -238,5 +375,50 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 		};
 
 		return result;
+	}
+
+	hasFocus(part: Parts): boolean {
+		const activeElement = document.activeElement;
+		if (!activeElement) {
+			return false;
+		}
+
+		const container = this.getContainer(part);
+
+		return !!container && isAncestorUsingFlowTo(activeElement, container);
+	}
+
+	getContainer(part: Parts): HTMLElement | undefined {
+		if (!this.parts.get(part)) {
+			return undefined;
+		}
+
+		return this.getPart(part).getContainer();
+	}
+
+	private setSideBarHidden(hidden: boolean, skipLayout?: boolean) {
+
+		// Adjust CSS
+		if (hidden) {
+			this.container.classList.add(WorkbenchLayoutClasses.SIDEBAR_HIDDEN);
+		} else {
+			this.container.classList.remove(WorkbenchLayoutClasses.SIDEBAR_HIDDEN);
+		}
+
+		// If sidebar becomes hidden, also hide the current active Viewlet if any
+		if (hidden && this.paneCompositeService.getActivePaneComposite(ViewContainerLocation.Sidebar)) {
+			this.paneCompositeService.hideActivePaneComposite(ViewContainerLocation.Sidebar);
+
+			// Pass Focus to Editor or Panel if Sidebar is now hidden
+			const activePanel = this.paneCompositeService.getActivePaneComposite(ViewContainerLocation.Panel);
+			if (this.hasFocus(Parts.PANEL_PART) && activePanel) {
+				activePanel.focus();
+			} else {
+				this.focus();
+			}
+		}
+
+		// Propagate to grid
+		this.workbenchGrid.setViewVisible(this.sideBarPartView, !hidden);
 	}
 }

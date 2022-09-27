@@ -1,10 +1,10 @@
 /* eslint-disable code-no-unexternalized-strings */
 import { CSSProperties } from 'mote/base/browser/jsx';
 import { setStyles } from 'mote/base/browser/jsx/createElement';
-import { ThemedStyles } from 'mote/base/common/themes';
 import * as DOM from 'vs/base/browser/dom';
 import { addDisposableListener, EventType, IFocusTracker, trackFocus } from 'vs/base/browser/dom';
 import { EventType as TouchEventType, Gesture } from 'vs/base/browser/touch';
+import { Color } from 'vs/base/common/color';
 import { Emitter, Event as BaseEvent } from 'vs/base/common/event';
 import { Disposable } from 'vs/base/common/lifecycle';
 
@@ -13,6 +13,10 @@ export interface ListItemOptions {
 	enableClick: boolean;
 	style?: CSSProperties;
 	isMobile?: boolean;
+}
+
+interface IListItemStyles {
+	hoverBackground: Color;
 }
 
 export class ListItem extends Disposable {
@@ -26,6 +30,7 @@ export class ListItem extends Disposable {
 	private iconContainer?: HTMLElement;
 	private childContainer?: HTMLElement;
 
+	private hoverBackground: Color | undefined;
 
 	private _onDidClick = this._register(new Emitter<Event>());
 	get onDidClick(): BaseEvent<Event> { return this._onDidClick.event; }
@@ -124,11 +129,16 @@ export class ListItem extends Disposable {
 	}
 
 	private updateByState(focused: boolean) {
-		if (focused) {
-			this._element.style.backgroundColor = ThemedStyles.buttonHoveredBackground.dark;
+		if (focused && this.hoverBackground) {
+			this._element.style.backgroundColor = this.hoverBackground.toString();
 		} else {
 			this._element.style.backgroundColor = '';
 		}
+	}
+
+	public style(styles: IListItemStyles) {
+		this.hoverBackground = styles.hoverBackground;
+		//this.applyStyles();
 	}
 
 	getStyle() {
@@ -143,15 +153,15 @@ export class ListItem extends Disposable {
 		return {
 			flexShrink: 0,
 			flexGrow: 0,
-			borderRadius: 3,
+			borderRadius: '3px',
 			//color: themedStyles.mediumTextColor,
-			width: this.options.isMobile ? 26 : 22,
-			height: this.options.isMobile ? 24 : 22,
+			width: this.options.isMobile ? '26px' : '22px',
+			height: this.options.isMobile ? '24px' : '22px',
 			display: "flex",
 			alignItems: "center",
 			justifyContent: "center",
 			//marginRight: props.icon ? 0 : 8
-		}
+		};
 	}
 
 	getIconStyle() {

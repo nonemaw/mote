@@ -182,6 +182,10 @@ export class EditableInput extends Disposable {
 				console.log(`[input]`, e);
 			}
 
+			if (e.inputType === 'insertParagraph' || e.inputType === 'insertLineBreak') {
+				return;
+			}
+
 			const newState = EditableState.readFromEditable(this.editable);
 			const typeInput = EditableState.deduceInput(this.editableState, newState, /*couldBeEmojiInput*/this.OS === OperatingSystem.Macintosh);
 
@@ -206,10 +210,6 @@ export class EditableInput extends Disposable {
 				|| (this.currentComposition && event.keyCode === KeyCode.Backspace)) {
 				// Stop propagation for keyDown events if the IME is processing key input
 				event.stopPropagation();
-			}
-			if (event.keyCode === KeyCode.Enter) {
-				// prevent the enter behavior
-				event.preventDefault();
 			}
 			if (event.equals(KeyCode.Escape)) {
 				// Prevent default always for `Esc`, otherwise it will generate a keypress

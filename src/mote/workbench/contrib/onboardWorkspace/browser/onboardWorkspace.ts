@@ -2,8 +2,10 @@ import { setStyles } from 'mote/base/browser/jsx/createElement';
 import { CSSProperties } from 'mote/base/browser/jsx/style';
 import { Button } from 'mote/base/browser/ui/button/button';
 import fonts from 'mote/base/browser/ui/fonts';
+import { IntlProvider } from 'mote/base/common/i18n';
 import { ThemedColors, ThemedStyles } from 'mote/base/common/themes';
-import { IThemeService } from 'mote/platform/theme/common/themeService';
+import { inputBackground, mediumTextColor, outlineButtonBorder, regularTextColor } from 'mote/platform/theme/common/themeColors';
+import { IThemeService, Themable } from 'mote/platform/theme/common/themeService';
 import { IWorkspaceContextService } from 'mote/platform/workspace/common/workspace';
 import { EditorPane } from 'mote/workbench/browser/parts/editor/editorPane';
 import { IEditorService } from 'mote/workbench/services/editor/common/editorService';
@@ -11,7 +13,7 @@ import { IUserService } from 'mote/workbench/services/user/common/user';
 import { Dimension, $, reset, clearNode } from 'vs/base/browser/dom';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
 
-class OnboardContainer {
+class OnboardContainer extends Themable {
 	create(title: string, subTitle: string | undefined, bodyDom: HTMLElement, footerDom?: HTMLElement) {
 		const container = $('.container');
 		container.style.display = 'flex';
@@ -73,8 +75,7 @@ class OnboardContainer {
 		return {
 			fontWeight: fonts.fontWeight.semibold,
 			fontSize: '28px',
-			color: ThemedStyles.regularTextColor.dark,
-			//fontFamily: font_config.getHeaderFontFamily()
+			color: this.getColor(regularTextColor)!,
 		};
 	}
 
@@ -83,7 +84,7 @@ class OnboardContainer {
 			fontSize: '18px',
 			lineHeight: 1.3,
 			paddingTop: '2px',
-			color: ThemedStyles.mediumTextColor.dark,
+			color: this.getColor(mediumTextColor)!,
 			fontWeight: fonts.fontWeight.regular
 		};
 	}
@@ -98,7 +99,7 @@ interface WorkspacePlan {
 	plan: string;
 }
 
-class PlanPicker {
+class PlanPicker extends Themable {
 	public plan = 'local';
 
 	private container!: HTMLElement;
@@ -106,6 +107,7 @@ class PlanPicker {
 	create(parent: HTMLElement) {
 		const container = $('.picker-container');
 		this.container = container;
+		setStyles(container, this.getToggleGroupWrap());
 		container.style.display = 'inline-flex';
 		parent.appendChild(container);
 		this.render();
@@ -117,17 +119,17 @@ class PlanPicker {
 			checked: isLocalPlan,
 			illustration: '/static/sources/image/onboarding/use-case-note.png',
 			plan: 'local',
-			label: 'For local usage',
-			description: 'Keep you data local. Never sync to cloud. More safe.',
-			callout: 'Free to use',
+			label: IntlProvider.INSTANCE.formatMessage({ id: 'onboarding.workspacePlanChoose.local.label', defaultMessage: 'For local usage' }),
+			description: IntlProvider.INSTANCE.formatMessage({ id: 'onboarding.workspacePlanChoose.local.description', defaultMessage: 'Keep you data local. Never sync to cloud. More safe.' }),
+			callout: IntlProvider.INSTANCE.formatMessage({ id: 'onboarding.workspacePlanChoose.local.callout', defaultMessage: 'Free to use' }),
 		});
 		this.createPlan(this.container, {
 			checked: !isLocalPlan,
 			illustration: '/static/sources/image/onboarding/team-features-illustration.png',
 			plan: 'personal',
-			label: 'For anywhere',
-			description: 'Save to cloud. Write better. Think more clearly. Stay organized.',
-			callout: 'Start for free',
+			label: IntlProvider.INSTANCE.formatMessage({ id: 'onboarding.workspacePlanChoose.personal.label', defaultMessage: 'For anywhere' }),
+			description: IntlProvider.INSTANCE.formatMessage({ id: 'onboarding.workspacePlanChoose.personal.description', defaultMessage: 'Save to cloud. Write better. Think more clearly. Stay organized.' }),
+			callout: IntlProvider.INSTANCE.formatMessage({ id: 'onboarding.workspacePlanChoose.personal.callout', defaultMessage: 'Start for free' }),
 		});
 	}
 
@@ -138,11 +140,8 @@ class PlanPicker {
 	}
 
 	createPlan(parent: HTMLElement, plan: WorkspacePlan) {
-		const container = $('.pplan-container');
-		parent.appendChild(container);
 
-		setStyles(container, this.getToggleGroupWrap(plan.checked));
-		const button = new Button(container, {
+		const button = new Button(parent, {
 			style: this.getToggleButtonStyle(plan.checked),
 			hoverStyle: this.getToggleButtonHoveredStyle()
 		});
@@ -168,7 +167,7 @@ class PlanPicker {
 		checkMarkImg.src = `/static/sources/image/onboarding/${plan.checked ? 'checked.svg' : 'unchecked.svg'}`;
 
 		const illustration = $('div');
-		illustration.style.height = '57px';
+		illustration.style.height = '90px';
 		const illustrationImg: HTMLImageElement = $('img');
 		illustrationImg.src = plan.illustration;
 		illustrationImg.style.height = '100%';
@@ -184,7 +183,7 @@ class PlanPicker {
 	getToggleButtonHoveredStyle() {
 		return {
 			opacity: 1,
-			background: "white"
+			background: 'white'
 		};
 	}
 
@@ -208,18 +207,18 @@ class PlanPicker {
 	getButtonHeadingStyle() {
 		return {
 			fontWeight: fonts.fontWeight.semibold,
-			fontSize: 18,
-			marginTop: 30,
-			color: ThemedStyles.regularTextColor.light
+			fontSize: '18px',
+			marginTop: '30px',
+			color: '#37352f'
 		};
 	}
 
 	getBaseSubheadingStyle() {
 		return {
-			color: ThemedStyles.mediumTextColor.light,
+			color: '#37352fa6',
 			fontSize: '14px',
 			lineHeight: 1.4,
-			transition: "all 200ms ease"
+			transition: 'all 200ms ease'
 		};
 	}
 
@@ -241,24 +240,26 @@ class PlanPicker {
 		});
 	}
 
-	getToggleGroupWrap(checked?: boolean): CSSProperties {
+	getToggleGroupWrap(): CSSProperties {
 		return {
-			marginTop: "72px",
-			marginBottom: "32px",
-			display: "inline-flex",
-			width: "100%",
-			justifyContent: "center"
+			marginTop: '10px',
+			marginBottom: '32px',
+			display: 'inline-flex',
+			width: '100%',
+			justifyContent: 'center'
 		};
 	}
 
 	getToggleButtonStyle(checked?: boolean): CSSProperties {
+		const buttonBorder = this.getColor(outlineButtonBorder)!;
 		const style: CSSProperties = {
 			margin: '12px',
 			textAlign: 'center',
 			width: '230px',
 			height: '218px',
+			borderRadius: '5px',
 			padding: '40px 0',
-			boxShadow: "".concat(ThemedStyles.outlineButtonBorder.dark, " 0 0 0 1px, rgba(167, 167, 167, 0.25) 0px 1px 2px")
+			boxShadow: "".concat(buttonBorder, " 0 0 0 1px, rgba(167, 167, 167, 0.25) 0px 1px 2px")
 		};
 
 		const checkedStyle = {
@@ -328,7 +329,7 @@ export class OnboardWorkspacePage extends EditorPane {
 	}
 
 	private createWorkspace(parent: HTMLElement) {
-		const container = new OnboardContainer();
+		const container = new OnboardContainer(this.themeService);
 
 		const formDom = $('.onboard-form');
 		formDom.style.alignSelf = 'center';
@@ -337,8 +338,8 @@ export class OnboardWorkspacePage extends EditorPane {
 		const label = $('div');
 		label.style.marginTop = '16px';
 		label.style.marginBottom = '5px';
-		label.style.color = ThemedStyles.mediumTextColor.dark;
-		label.innerText = 'Workspace name';
+		label.style.color = this.getColor(mediumTextColor)!;
+		label.innerText = IntlProvider.INSTANCE.formatMessage({ id: 'onboarding.workspaceCreate.inputHelp', defaultMessage: 'Workspace name' });
 
 		const input: HTMLInputElement = $('input');
 		input.placeholder = 'Mote space';
@@ -354,8 +355,8 @@ export class OnboardWorkspacePage extends EditorPane {
 		inputContainer.appendChild(input);
 
 		parent.appendChild(container.create(
-			'Create a new workspace',
-			'Fill in some details for your workspace.',
+			IntlProvider.INSTANCE.formatMessage({ id: 'onboarding.workspaceCreate.title', defaultMessage: 'Create a new workspace' }),
+			IntlProvider.INSTANCE.formatMessage({ id: 'onboarding.workspaceCreate.subtitle', defaultMessage: 'Fill in some details for your workspace.' }),
 			formDom
 		));
 
@@ -364,7 +365,7 @@ export class OnboardWorkspacePage extends EditorPane {
 
 		const button = new Button(formDom, { style: this.getButtonStyle() });
 		button.element.style.marginTop = '15px';
-		button.element.innerText = 'Continue';
+		button.element.innerText = IntlProvider.INSTANCE.formatMessage({ id: 'onboarding.workspaceCreate.continue', defaultMessage: 'Continue' });
 		button.onDidClick(() => {
 			const userId = this.plan === 'local' ? 'local' : this.userService.currentProfile?.id;
 			this.workspaceService.createWorkspace(userId!, input.value);
@@ -374,25 +375,25 @@ export class OnboardWorkspacePage extends EditorPane {
 
 	getBaseInputStyle(): CSSProperties {
 		return {
-			display: "flex",
-			alignItems: "center",
-			width: "100%",
+			display: 'flex',
+			alignItems: 'center',
+			width: '100%',
 			fontSize: '14px',
-			lineHeight: "20px",
+			lineHeight: '20px',
 			paddingTop: '4px',
 			paddingBottom: '4px',
 			paddingLeft: '10px',
 			paddingRight: '10px',
-			position: "relative",
+			position: 'relative',
 			borderRadius: '3px',
 			boxShadow: ThemedStyles.inputBoxShadow.dark,
-			background: ThemedStyles.inputBackground.dark,
-			cursor: "text"
+			background: this.getColor(inputBackground)!,
+			cursor: 'text'
 		};
 	}
 
 	private createPlanPicker(parent: HTMLElement) {
-		const container = new OnboardContainer();
+		const container = new OnboardContainer(this.themeService);
 
 		const pickerDom = $('.onboard-picker');
 		pickerDom.style.display = 'flex';
@@ -400,16 +401,22 @@ export class OnboardWorkspacePage extends EditorPane {
 		pickerDom.style.justifyContent = 'center';
 		pickerDom.style.alignItems = 'center';
 
-		const planPicker = new PlanPicker();
+		const planPicker = new PlanPicker(this.themeService);
 		planPicker.create(pickerDom);
 		parent.appendChild(container.create(
-			'How are you planning to use Mote?',
-			'We’ll streamline your setup experience accordingly.',
+			IntlProvider.INSTANCE.formatMessage({
+				id: 'onboarding.workspacePlanChoose.title',
+				defaultMessage: 'How are you planning to use Mote?'
+			}),
+			IntlProvider.INSTANCE.formatMessage({
+				id: 'onboarding.workspacePlanChoose.subtitle',
+				defaultMessage: 'We’ll streamline your setup experience accordingly.'
+			}),
 			pickerDom
 		));
 
 		const button = new Button(pickerDom, { style: this.getButtonStyle() });
-		button.element.innerText = 'Continue';
+		button.element.innerText = IntlProvider.INSTANCE.formatMessage({ id: 'onboarding.workspacePlanChoose.continue', defaultMessage: 'Continue' });
 		button.onDidClick(() => {
 			this.plan = planPicker.plan;
 			this.stage = 'workspace_create';

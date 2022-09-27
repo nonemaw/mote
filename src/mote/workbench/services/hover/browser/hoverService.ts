@@ -1,3 +1,4 @@
+import 'vs/css!./media/hover';
 import { IHoverService, IHoverOptions, IHoverWidget } from 'mote/workbench/services/hover/browser/hover';
 import { DisposableStore, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -6,6 +7,8 @@ import { addDisposableListener, EventType } from 'vs/base/browser/dom';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IContextViewService } from 'mote/platform/contextview/browser/contextView';
 import { IContextViewProvider, IDelegate } from 'vs/base/browser/ui/contextview/contextview';
+import { registerThemingParticipant } from 'mote/platform/theme/common/themeService';
+import { editorHoverBackground } from 'mote/platform/theme/common/themeColors';
 
 export class HoverService implements IHoverService {
 
@@ -106,3 +109,11 @@ class HoverContextViewDelegate implements IDelegate {
 }
 
 registerSingleton(IHoverService, HoverService, true);
+
+registerThemingParticipant((theme, collector) => {
+	const hoverBackground = theme.getColor(editorHoverBackground);
+	if (hoverBackground) {
+		collector.addRule(`.workbench .workbench-hover { background-color: ${hoverBackground}; }`);
+		collector.addRule(`.workbench .workbench-hover-pointer:after { background-color: ${hoverBackground}; }`);
+	}
+});

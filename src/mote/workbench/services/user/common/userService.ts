@@ -7,7 +7,7 @@ import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storag
 
 export class UserService extends Disposable implements IUserService {
 
-	private static STORAGE_KEY = 'userProfile';
+	private static STORAGE_KEY = 'user.profile';
 
 	readonly _serviceBrand: undefined;
 
@@ -25,6 +25,9 @@ export class UserService extends Disposable implements IUserService {
 		const profile = this.storageService.get(UserService.STORAGE_KEY, StorageScope.APPLICATION);
 		if (profile) {
 			this._currentProfile = JSON.parse(profile);
+			if (this._currentProfile) {
+				sessionStorage.setItem('auth_token', this._currentProfile.token);
+			}
 		}
 	}
 
@@ -35,30 +38,22 @@ export class UserService extends Disposable implements IUserService {
 	public async logout(): Promise<void> {
 		this._currentProfile = undefined;
 		this.storageService.remove(UserService.STORAGE_KEY, StorageScope.APPLICATION);
+		sessionStorage.removeItem('auth_token');
 		this._onDidChangeCurrentProfile.fire(undefined);
 	}
 
 	public async signup(payload: UserSignupPayload): Promise<IUserProfile> {
 		const loginData = await this.remoteService.signup(payload);
-		if (loginData.token) {
-			sessionStorage.setItem('auth_token', loginData.token);
-		}
 		return this.buildProfile(loginData);
 	}
 
 	public async login(payload: UserLoginPayload): Promise<IUserProfile> {
 		const loginData = await this.remoteService.login(payload);
-		if (loginData.token) {
-			sessionStorage.setItem('auth_token', loginData.token);
-		}
 		return this.buildProfile(loginData);
 	}
 
 	public async checkUser(): Promise<IUserProfile> {
 		const loginData = await this.remoteService.getUser('me');
-		if (loginData.token) {
-			sessionStorage.setItem('auth_token', loginData.token);
-		}
 		return this.buildProfile(loginData);
 	}
 
@@ -66,10 +61,12 @@ export class UserService extends Disposable implements IUserService {
 		const profile = {
 			id: data.id,
 			email: data.email,
-			name: data.nickname || ''
+			name: data.nickname || '',
+			token: data.token
 		};
 		this._currentProfile = profile;
 		this.storageService.store(UserService.STORAGE_KEY, JSON.stringify(profile), StorageScope.APPLICATION, StorageTarget.USER);
+		sessionStorage.setItem('auth_token', data.token);
 		this._onDidChangeCurrentProfile.fire(profile);
 		return profile;
 	}

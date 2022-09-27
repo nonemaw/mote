@@ -5,6 +5,7 @@ import { ILifecycleMainService, LifecycleMainService } from "mote/platform/lifec
 import { ConsoleLoggerService } from "mote/platform/log/common/consoleLog";
 import { IProtocolMainService } from "mote/platform/protocol/electron-main/protocol";
 import { ProtocolMainService } from "mote/platform/protocol/electron-main/protocolMainService";
+import { IRequestService } from 'mote/platform/request/common/request';
 import { IThemeMainService, ThemeMainService } from "mote/platform/theme/electron-main/themeMainService";
 import { coalesce, distinct } from "vs/base/common/arrays";
 import { IPathWithLineAndColumn, isValidBasename, parseLineAndColumnAware, sanitizeFilePath } from "vs/base/common/extpath";
@@ -20,11 +21,13 @@ import { IFileService } from "vs/platform/files/common/files";
 import { FileService } from "vs/platform/files/common/fileService";
 import { DiskFileSystemProvider } from "vs/platform/files/node/diskFileSystemProvider";
 import { SyncDescriptor } from "vs/platform/instantiation/common/descriptors";
+import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { InstantiationService } from "vs/platform/instantiation/common/instantiationService";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { ConsoleMainLogger, ILoggerService, ILogService, LogLevel, LogService } from "vs/platform/log/common/log";
 import product from "vs/platform/product/common/product";
 import { IProductService } from "vs/platform/product/common/productService";
+import { RequestMainService } from 'mote/platform/request/electron-main/requestMainService';
 import { IStateMainService } from "vs/platform/state/electron-main/state";
 import { StateMainService } from "vs/platform/state/electron-main/stateMainService";
 import { MoteApplication } from "./app";
@@ -41,17 +44,17 @@ class MoteMain {
 	}
 
 	private async startup(): Promise<void> {
-		const [instantiationService] = this.createServices();
+		const [instantiationService, instanceEnvironment] = this.createServices();
 
 		// Startup
 		await instantiationService.invokeFunction(async accessor => {
 			console.log("startup...");
 
-			return instantiationService.createInstance(MoteApplication).startup();
+			return instantiationService.createInstance(MoteApplication, instanceEnvironment).startup();
 		});
 	}
 
-	private createServices() {
+	private createServices(): [IInstantiationService, IProcessEnvironment,] {
 		const services = new ServiceCollection();
 
 		// Product
@@ -60,7 +63,7 @@ class MoteMain {
 
 		// Environment
 		const environmentMainService = new EnvironmentMainService(this.resolveArgs(), productService);
-		this.patchEnvironment(environmentMainService); // Patch `process.env` with the instance's environment
+		const instanceEnvironment = this.patchEnvironment(environmentMainService); // Patch `process.env` with the instance's environment
 		services.set(IEnvironmentMainService, environmentMainService);
 
 		const logService = new LogService(new ConsoleMainLogger(LogLevel.Debug));
@@ -82,6 +85,9 @@ class MoteMain {
 		// Lifecycle
 		services.set(ILifecycleMainService, new SyncDescriptor(LifecycleMainService));
 
+		// Request
+		services.set(IRequestService, new SyncDescriptor(RequestMainService));
+
 		// State
 		const stateMainService = new StateMainService(environmentMainService, logService, fileService);
 		services.set(IStateMainService, stateMainService);
@@ -92,7 +98,7 @@ class MoteMain {
 		// Protocol
 		services.set(IProtocolMainService, new SyncDescriptor(ProtocolMainService));
 
-		return [new InstantiationService(services, true)];
+		return [new InstantiationService(services, true), instanceEnvironment];
 	}
 
 	private patchEnvironment(environmentMainService: IEnvironmentMainService): IProcessEnvironment {

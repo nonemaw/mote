@@ -1,4 +1,6 @@
+import { ConfigurationChangedEvent, EditorOption } from 'mote/editor/common/config/editorOptions';
 import { EditorSelection } from 'mote/editor/common/core/editorSelection';
+import { ScrollEvent } from 'vs/base/common/scrollable';
 
 export const enum ViewEventType {
 	ViewCompositionStart,
@@ -29,6 +31,21 @@ export class ViewCompositionStartEvent {
 export class ViewCompositionEndEvent {
 	public readonly type = ViewEventType.ViewCompositionEnd;
 	constructor() { }
+}
+
+export class ViewConfigurationChangedEvent {
+
+	public readonly type = ViewEventType.ViewConfigurationChanged;
+
+	public readonly _source: ConfigurationChangedEvent;
+
+	constructor(source: ConfigurationChangedEvent) {
+		this._source = source;
+	}
+
+	public hasChanged(id: EditorOption): boolean {
+		return this._source.hasChanged(id);
+	}
 }
 
 export class ViewCursorStateChangedEvent {
@@ -98,13 +115,42 @@ export class ViewLinesDeletedEvent {
 	}
 }
 
+export class ViewScrollChangedEvent {
+
+	public readonly type = ViewEventType.ViewScrollChanged;
+
+	public readonly scrollWidth: number;
+	public readonly scrollLeft: number;
+	public readonly scrollHeight: number;
+	public readonly scrollTop: number;
+
+	public readonly scrollWidthChanged: boolean;
+	public readonly scrollLeftChanged: boolean;
+	public readonly scrollHeightChanged: boolean;
+	public readonly scrollTopChanged: boolean;
+
+	constructor(source: ScrollEvent) {
+		this.scrollWidth = source.scrollWidth;
+		this.scrollLeft = source.scrollLeft;
+		this.scrollHeight = source.scrollHeight;
+		this.scrollTop = source.scrollTop;
+
+		this.scrollWidthChanged = source.scrollWidthChanged;
+		this.scrollLeftChanged = source.scrollLeftChanged;
+		this.scrollHeightChanged = source.scrollHeightChanged;
+		this.scrollTopChanged = source.scrollTopChanged;
+	}
+}
+
 //#endregion
 
 export type ViewEvent = (
 	ViewCompositionStartEvent
 	| ViewCompositionEndEvent
+	| ViewConfigurationChangedEvent
 	| ViewCursorStateChangedEvent
 	| ViewLinesChangedEvent
 	| ViewLinesInsertedEvent
 	| ViewLinesDeletedEvent
+	| ViewScrollChangedEvent
 );

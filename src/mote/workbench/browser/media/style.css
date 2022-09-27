@@ -21,7 +21,3 @@ body {
     display: block;
     content: attr(placeholder);
 }
-
-.workbench {
-	color: #cccccc;
-}

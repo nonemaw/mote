@@ -1,35 +1,34 @@
-import { EditorView } from 'mote/editor/browser/editorView';
-import { ICommandDelegate, ViewController } from 'mote/editor/browser/view/viewController';
 import RecordStore from 'mote/platform/store/common/recordStore';
-import { IEditorOptions } from 'mote/platform/editor/common/editor';
+import { IEditorOptions, IResourceEditorInput } from 'mote/platform/editor/common/editor';
 import { IThemeService } from 'mote/platform/theme/common/themeService';
 import { EditorPane } from 'mote/workbench/browser/parts/editor/editorPane';
 import { EditorInput } from 'mote/workbench/common/editorInput';
 import { DocumentEditorInput } from 'mote/workbench/contrib/documentEditor/browser/documentEditorInput';
-import { Dimension, $, reset, clearNode } from 'vs/base/browser/dom';
+import { Dimension, $, } from 'vs/base/browser/dom';
 import { BugIndicatingError } from 'vs/base/common/errors';
-import { DisposableStore } from 'vs/base/common/lifecycle';
+import { Disposable, IDisposable, } from 'vs/base/common/lifecycle';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { OutgoingViewEventKind, SelectionChangedEvent } from 'mote/editor/common/viewEventDispatcher';
 import { IQuickMenuService } from 'mote/workbench/services/quickmenu/browser/quickmenu';
 import { StoreUtils } from 'mote/platform/store/common/storeUtils';
 import { TextSelectionMode } from 'mote/editor/common/core/selectionUtils';
 import { IAction } from 'vs/base/common/actions';
 import { CSSProperties } from 'mote/base/browser/jsx/style';
 import { ThemedStyles } from 'mote/base/common/themes';
-import BlockStore from 'mote/platform/store/common/blockStore';
+import { IEditorResolverService } from 'mote/workbench/services/editor/common/editorResolverService';
+import { MoteEditorWidget } from 'mote/editor/browser/widget/moteEditorWidget';
+import { assertIsDefined } from 'vs/base/common/types';
+import { TextSelection } from 'mote/editor/common/core/rangeUtils';
+import { IMoteEditor } from 'mote/editor/browser/editorBrowser';
 
 
 export class DocumentEditor extends EditorPane {
 
-
 	static ID = 'documentEditor';
 
-	private readonly _disposables = new DisposableStore();
+	//private editorContainer!: HTMLElement;
+	private onChangeListener: IDisposable | undefined = undefined;
 
-	private container: HTMLElement;
-
-	private viewController!: ViewController;
+	private editorControl: IMoteEditor | undefined = undefined;
 
 	constructor(
 		@IInstantiationService private instantiationService: IInstantiationService,
@@ -37,13 +36,13 @@ export class DocumentEditor extends EditorPane {
 		@IQuickMenuService private quickMenuService: IQuickMenuService,
 	) {
 		super(DocumentEditor.ID, themeService);
-
-		this.container = $('.document-editor');
 	}
 
 	protected createEditor(parent: HTMLElement): void {
-
-		reset(parent, this.container);
+		// Create editor control
+		//this.editorContainer = parent;
+		this.editorControl = this._register(this.instantiationService.createInstance(
+			MoteEditorWidget, parent, {}, {}));
 	}
 
 	createCover(parent: HTMLElement) {
@@ -59,55 +58,30 @@ export class DocumentEditor extends EditorPane {
 
 		await super.setInput(input, options);
 
-		const [view, hasRealView] = this.createView(input.pageStore);
-		if (hasRealView) {
-			clearNode(this.container);
+		const control = assertIsDefined(this.editorControl);
+		control.setStore(input.pageStore);
 
-			view.domNode.domNode.style.paddingTop = '25px';
-			this.container.appendChild(view.domNode.domNode);
-
-			view.render(false, false);
+		if (this.onChangeListener) {
+			this.onChangeListener.dispose();
 		}
 
+		this.onChangeListener = this._register(control.onDidChangeSelection((e) => this.showQuickMenu(e, input.pageStore.getContentStore())));
 	}
 
-	private createView(pageStore: BlockStore): [EditorView, boolean] {
-		const commandDelegate: ICommandDelegate = {
-			type: (text: string) => {
-				//this._type('keyboard', text);
-			},
-			compositionType: (text: string, replacePrevCharCnt: number, replaceNextCharCnt: number, positionDelta: number) => {
-				//this._compositionType('keyboard', text, replacePrevCharCnt, replaceNextCharCnt, positionDelta);
-			},
-		};
-
-		const viewController = new ViewController(pageStore.getContentStore());
-		this.viewController = viewController;
-
-		this._disposables.dispose();
-
-		this._disposables.add(viewController.onEvent((e) => {
-			switch (e.kind) {
-				case OutgoingViewEventKind.SelectionChanged:
-					this.showQuickMenu(e, pageStore.getContentStore());
-					break;
-			}
-		}));
-
-		const editorView = this.instantiationService.createInstance(EditorView, commandDelegate, viewController, pageStore);
-		return [editorView, true];
-	}
-
-	private showQuickMenu(e: SelectionChangedEvent, contentStore: RecordStore) {
-		if (e.selection.startIndex === e.selection.endIndex) {
+	private showQuickMenu(e: TextSelection, contentStore: RecordStore) {
+		if (e.startIndex === e.endIndex) {
 			return;
 		}
+		if (e.lineNumber < 0) {
+			return;
+		}
+		const control = assertIsDefined(this.editorControl);
 		const actions: IAction[] = [];
 		actions.push({
 			id: 'quick.bold',
 			label: 'B',
 			tooltip: 'Bold',
-			run: () => this.viewController.decorate(['b']),
+			run: () => control.trigger('quickmenu', 'decorate', ['b']),
 			enabled: true,
 			class: '',
 			dispose: () => { }
@@ -117,7 +91,7 @@ export class DocumentEditor extends EditorPane {
 			id: 'quick.italic',
 			label: 'I',
 			tooltip: 'Italic',
-			run: () => this.viewController.decorate(['i']),
+			run: () => control.trigger('quickmenu', 'decorate', ['i']),
 			enabled: true,
 			class: 'italic',
 			dispose: () => { }
@@ -126,17 +100,37 @@ export class DocumentEditor extends EditorPane {
 			id: 'quick.underline',
 			label: 'U',
 			tooltip: 'Underline',
-			run: () => this.viewController.decorate(['_']),
+			run: () => control.trigger('quickmenu', 'decorate', ['_']),
 			enabled: true,
-			class: 'italic',
+			class: 'underline',
+			dispose: () => { }
+		});
+
+		actions.push({
+			id: 'quick.strikethrough',
+			label: 'ab',
+			tooltip: 'Strike-through',
+			run: () => control.trigger('quickmenu', 'decorate', ['s']),
+			enabled: true,
+			class: 'line-through',
+			dispose: () => { }
+		});
+
+		actions.push({
+			id: 'quick.code',
+			label: '< >',
+			tooltip: 'Mark as code',
+			run: () => control.trigger('quickmenu', 'decorate', ['c']),
+			enabled: true,
+			class: '',
 			dispose: () => { }
 		});
 
 		this.quickMenuService.showQuickMenu({
 			getActions: () => actions,
 			state: {
-				selection: e.selection,
-				store: StoreUtils.createStoreForLineNumber(e.selection.lineNumber, contentStore).getTitleStore(),
+				selection: e,
+				store: StoreUtils.createStoreForLineNumber(e.lineNumber, contentStore).getTitleStore(),
 				mode: TextSelectionMode.Editing
 			}
 		});
@@ -163,6 +157,28 @@ export class DocumentEditor extends EditorPane {
 	}
 
 	layout(dimension: Dimension): void {
+		this.editorControl?.layout(dimension);
+	}
+}
 
+
+export class DocumentEditorResolverContribution extends Disposable {
+	constructor(
+		@IEditorResolverService editorResolverService: IEditorResolverService,
+	) {
+		super();
+
+
+		editorResolverService.registerEditor(
+			'page',
+			{
+				id: DocumentEditorInput.ID
+			},
+			(editor) => this.createDocumentEditorInput(editor)
+		);
+	}
+
+	private async createDocumentEditorInput(input: IResourceEditorInput): Promise<DocumentEditorInput> {
+		return Promise.resolve(new DocumentEditorInput(input.store));
 	}
 }

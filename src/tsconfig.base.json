@@ -12,13 +12,14 @@
 		"useUnknownInCatchVariables": false,
 		"forceConsistentCasingInFileNames": true,
 		"baseUrl": ".",
+		"resolveJsonModule": true,
 		"paths": {
 			"vs/*": [
 				"./vs/*"
 			],
 			"mote/*": [
 				"./mote/*"
-			]
+			],
 		},
 		"lib": [
 			"ES2016",

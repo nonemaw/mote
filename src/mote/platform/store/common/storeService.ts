@@ -4,6 +4,7 @@ import { IStoreService } from 'mote/platform/store/common/store';
 import { StoreUtils } from 'mote/platform/store/common/storeUtils';
 import { IRemoteService } from 'mote/platform/remote/common/remote';
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
+import { isLocalUser } from 'mote/platform/user/common/user';
 
 export class StoreService implements IStoreService {
 
@@ -30,11 +31,13 @@ export class StoreService implements IStoreService {
 		if (recordPersisted) {
 			StoreUtils.updateCache(userId, pointer, JSON.parse(recordPersisted), cacheStore, this.storeageService);
 		}
+		if (isLocalUser(userId)) {
+			return recordPersisted;
+		}
 
 		try {
-			const recordCache = cacheStore.getRecord({ userId, pointer });
-			const version = recordCache && recordCache.value && recordCache.value.version ? recordCache.value.version : -1;
-			recordWithRole = await this.remoteService.syncRecordValue(userId, pointer, version);
+			// Force request latest version
+			recordWithRole = await this.remoteService.syncRecordValue(userId, pointer, -1);
 			if (recordWithRole) {
 				StoreUtils.updateCache(userId, pointer, recordWithRole, cacheStore, this.storeageService);
 				cacheStore.fire(key);

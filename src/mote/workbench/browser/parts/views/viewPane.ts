@@ -15,7 +15,7 @@ import { parseLinkedText } from "vs/base/common/linkedText";
 import { Button } from "vs/base/browser/ui/button/button";
 import { Registry } from "vs/platform/registry/common/platform";
 import { IContextMenuService } from 'mote/platform/contextview/browser/contextView';
-import { ThemeIcon } from 'mote/platform/theme/common/themeService';
+import { IThemeService, ThemeIcon } from 'mote/platform/theme/common/themeService';
 import { Codicon } from 'vs/base/common/codicons';
 import { registerIcon } from 'mote/platform/theme/common/iconRegistry';
 
@@ -115,6 +115,7 @@ export abstract class ViewPane extends Pane implements IView {
 		options: IViewPaneOptions,
 		@ILogService protected logService: ILogService,
 		@IContextMenuService protected contextMenuService: IContextMenuService,
+		@IThemeService protected themeService: IThemeService,
 	) {
 		super(options);
 

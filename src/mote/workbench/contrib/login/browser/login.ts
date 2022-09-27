@@ -8,6 +8,7 @@ import { IUserService } from 'mote/workbench/services/user/common/user';
 import { IUserProfile } from 'mote/platform/user/common/user';
 import { IEditorService } from 'mote/workbench/services/editor/common/editorService';
 import { CaffeineError } from 'mote/base/common/errors';
+import { IntlProvider } from 'mote/base/common/i18n';
 
 export class LoginPage extends EditorPane {
 	public static readonly ID = 'loginPage';
@@ -68,7 +69,10 @@ export class LoginPage extends EditorPane {
 
 		body.appendChild(this.error);
 
-		const submitBtn = this.createButton(body, 'Continue with email');
+		const submitBtn = this.createButton(
+			body,
+			IntlProvider.INSTANCE.formatMessage({ id: 'login.continueWithEmail', defaultMessage: 'Continue with email' })
+		);
 		submitBtn.onDidClick((e) => {
 			const password = this.inputMap.get('password')?.value;
 			if (!password) {
@@ -102,14 +106,19 @@ export class LoginPage extends EditorPane {
 
 		});
 		if (this.login) {
-			const registerBtn = this.createButton(body, 'Register to create a new user');
+			const registerBtn = this.createButton(
+				body,
+				IntlProvider.INSTANCE.formatMessage({ id: 'login.register', defaultMessage: 'Register to create a new user' })
+			);
 			this._register(registerBtn.onDidClick((e) => {
 				this.login = false;
 				clearNode(this.container);
 				this.createEditor(parent);
 			}));
 		} else {
-			const loginBtn = this.createButton(body, 'Login with exist account');
+			const loginBtn = this.createButton(body,
+				IntlProvider.INSTANCE.formatMessage({ id: 'login.loginWithExistAccount', defaultMessage: 'Login with exist account' })
+			);
 			this._register(loginBtn.onDidClick((e) => {
 				this.login = true;
 				clearNode(this.container);
@@ -126,7 +135,7 @@ export class LoginPage extends EditorPane {
 		header.style.marginTop = '15vh';
 		header.style.fontWeight = `${fonts.fontWeight.semibold}`;
 		header.style.fontSize = '50px';
-		header.innerText = 'Login';
+		header.innerText = IntlProvider.INSTANCE.formatMessage({ id: 'login.title', defaultMessage: 'Login' });
 		return header;
 	}
 

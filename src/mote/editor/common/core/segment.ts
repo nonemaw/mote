@@ -2,7 +2,7 @@
 import { Lodash } from "mote/base/common/lodash";
 import { TextSelectionState } from "../editorState";
 import { Command } from "../../../platform/transaction/common/operations";
-import { combineArray, getFirstInArray, getSecondArrayInArray, IAnnotation, ISegment } from "../segmentUtils";
+import { annotationsEqual, combineArray, getFirstInArray, getSecondArrayInArray, IAnnotation, ISegment } from "../segmentUtils";
 import { TextSelection } from "./selectionUtils";
 import { Transaction } from "./transaction";
 
@@ -89,15 +89,15 @@ export class Segment {
 			segmentsBeforeRange,
 			segmentsInsideRange,
 			segmentsAfterRange
-		}
+		};
 	}
 
-	private static merge(segments: ISegment[], selection: TextSelection, annotation: IAnnotation): ISegment[] {
+	public static merge(segments: ISegment[], selection: TextSelection, annotation: IAnnotation): ISegment[] {
 		const { segmentsBeforeRange, segmentsInsideRange, segmentsAfterRange } = this.afterSelect(segments, selection);
 		const containTargetAnnotation = Lodash.every(segmentsInsideRange, (segment) => {
 			const annotations: IAnnotation[] = getSecondArrayInArray(segment);
 			// TODO: use deep equal later
-			return annotations.some(e => e[0] === annotation[0]);
+			return annotations.some(e => annotationsEqual([e], [annotation]));
 		});
 
 		let newSegments: ISegment[];
@@ -105,18 +105,30 @@ export class Segment {
 		if (containTargetAnnotation) {
 			newSegments = segmentsInsideRange.map(segment => {
 				const text = getFirstInArray(segment);
-				const annotations = getSecondArrayInArray(segment).filter((e: any) => e[0] !== annotation[0]);
+				const annotations = getSecondArrayInArray(segment).filter((e: any) => !annotationsEqual([e], [annotation]));
 				return combineArray(text, annotations) as ISegment;
 			});
-		}
-		// Add new annotation
-		else {
-			newSegments = segmentsInsideRange.map(segment => {
+		} else {
+			newSegments = [];
+			// Add new annotation
+			for (let i = 0; i < segmentsInsideRange.length; i++) {
+				const segment = segmentsInsideRange[i];
 				const text = getFirstInArray(segment);
-				const annotations = new Set(getSecondArrayInArray(segment));
+				const annotations = new Set<IAnnotation>(getSecondArrayInArray(segment));
 				annotations.add(annotation);
-				return combineArray(text, [...annotations]) as ISegment;
-			});
+				if (newSegments.length > 0) {
+					const prevSegment = newSegments[newSegments.length - 1];
+					const prevAnnotations = getSecondArrayInArray(prevSegment);
+					if (annotationsEqual(prevAnnotations, [...annotations])) {
+						// Merge prev segment with same annotations
+						prevSegment[0] = prevSegment[0] + text;
+					} else {
+						newSegments.push(combineArray(text, [...annotations]) as ISegment);
+					}
+				} else {
+					newSegments.push(combineArray(text, [...annotations]) as ISegment);
+				}
+			}
 		}
 		return [...segmentsBeforeRange, ...newSegments, ...segmentsAfterRange];
 	}

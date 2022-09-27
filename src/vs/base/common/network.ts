@@ -50,6 +50,8 @@ export namespace Schemas {
 
 	export const vscodeRemote = 'vscode-remote';
 
+	export const moteRemote = 'mote-remote';
+
 	export const vscodeRemoteResource = 'vscode-remote-resource';
 
 	export const vscodeUserData = 'vscode-userdata';

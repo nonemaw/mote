@@ -60,6 +60,7 @@
     "build:azure": "yarn mote-web"
   },
   "dependencies": {
+    "@formatjs/intl": "^2.3.1",
     "@microsoft/1ds-core-js": "^3.2.2",
     "@microsoft/1ds-post-js": "^3.2.2",
     "@parcel/watcher": "2.0.5",
@@ -80,6 +81,7 @@
     "native-keymap": "3.3.0",
     "native-watchdog": "1.4.0",
     "node-pty": "0.11.0-beta11",
+    "prismjs": "^1.28.0",
     "spdlog": "^0.13.0",
     "tas-client-umd": "0.1.6",
     "uuid": "^8.3.2",
@@ -114,6 +116,7 @@
     "@types/minimist": "^1.2.1",
     "@types/mocha": "^9.1.1",
     "@types/node": "16.x",
+    "@types/prismjs": "^1.26.0",
     "@types/sinon": "^10.0.2",
     "@types/sinon-test": "^2.4.2",
     "@types/trusted-types": "^1.0.6",

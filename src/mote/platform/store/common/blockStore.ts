@@ -42,7 +42,7 @@ export default class BlockStore extends RecordStore {
 		return BlockStore.createChildStore(this, this.pointer, [property]);
 	}
 
-	getProperties() {
+	getProperties(): { [key: string]: any } {
 		const value = this.getValue();
 		if (value && value.properties) {
 			return value.properties;
@@ -60,6 +60,10 @@ export default class BlockStore extends RecordStore {
 
 	getPropertiesStore() {
 		return RecordStore.createChildStore(this, this.pointer, ['properties']);
+	}
+
+	getPermissionsStore() {
+		return RecordStore.createChildStore(this, this.pointer, ['permissions']);
 	}
 
 	getContentStores(table: string = 'block'): RecordStore[] {

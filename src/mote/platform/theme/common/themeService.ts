@@ -1,9 +1,11 @@
 import { IconContribution, IconDefinition } from 'mote/platform/theme/common/iconRegistry';
 import { Codicon, CSSIcon } from 'vs/base/common/codicons';
 import { Color } from 'vs/base/common/color';
-import { Event } from 'vs/base/common/event';
-import { Disposable } from 'vs/base/common/lifecycle';
+import { Emitter, Event } from 'vs/base/common/event';
+import { Disposable, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
+import { Registry } from 'vs/platform/registry/common/platform';
 import { ColorIdentifier } from './colorRegistry';
 import { ColorScheme } from './theme';
 
@@ -82,6 +84,15 @@ export namespace ThemeIcon {
 	export const asCSSSelector: (icon: ThemeIcon) => string = CSSIcon.asCSSSelector;
 }
 
+export function getThemeTypeSelector(type: ColorScheme): string {
+	switch (type) {
+		case ColorScheme.DARK: return 'mote-dark';
+		case ColorScheme.HIGH_CONTRAST_DARK: return 'mote-hc-black';
+		case ColorScheme.HIGH_CONTRAST_LIGHT: return 'mote-hc-light';
+		default: return 'mote';
+	}
+}
+
 export interface IColorTheme {
 
 	readonly type: ColorScheme;
@@ -123,6 +134,14 @@ export interface IProductIconTheme {
 	getIcon(iconContribution: IconContribution): IconDefinition | undefined;
 }
 
+export interface ICssStyleCollector {
+	addRule(rule: string): void;
+}
+
+export interface IThemingParticipant {
+	(theme: IColorTheme, collector: ICssStyleCollector, environment: IEnvironmentService): void;
+}
+
 export interface IThemeService {
 	readonly _serviceBrand: undefined;
 
@@ -135,6 +154,56 @@ export interface IThemeService {
 	readonly onDidProductIconThemeChange: Event<IProductIconTheme>;
 }
 
+// static theming participant
+export const ThemeExtensions = {
+	ThemingContribution: 'base.contributions.theming'
+};
+
+export interface IThemingRegistry {
+
+	/**
+	 * Register a theming participant that is invoked on every theme change.
+	 */
+	onColorThemeChange(participant: IThemingParticipant): IDisposable;
+
+	getThemingParticipants(): IThemingParticipant[];
+
+	readonly onThemingParticipantAdded: Event<IThemingParticipant>;
+}
+
+class ThemingRegistry implements IThemingRegistry {
+	private themingParticipants: IThemingParticipant[] = [];
+	private readonly onThemingParticipantAddedEmitter: Emitter<IThemingParticipant>;
+
+	constructor() {
+		this.themingParticipants = [];
+		this.onThemingParticipantAddedEmitter = new Emitter<IThemingParticipant>();
+	}
+
+	public onColorThemeChange(participant: IThemingParticipant): IDisposable {
+		this.themingParticipants.push(participant);
+		this.onThemingParticipantAddedEmitter.fire(participant);
+		return toDisposable(() => {
+			const idx = this.themingParticipants.indexOf(participant);
+			this.themingParticipants.splice(idx, 1);
+		});
+	}
+
+	public get onThemingParticipantAdded(): Event<IThemingParticipant> {
+		return this.onThemingParticipantAddedEmitter.event;
+	}
+
+	public getThemingParticipants(): IThemingParticipant[] {
+		return this.themingParticipants;
+	}
+}
+
+const themingRegistry = new ThemingRegistry();
+Registry.add(ThemeExtensions.ThemingContribution, themingRegistry);
+
+export function registerThemingParticipant(participant: IThemingParticipant): IDisposable {
+	return themingRegistry.onColorThemeChange(participant);
+}
 
 /**
  * Utility base class for all themable components.

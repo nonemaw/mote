@@ -1319,7 +1319,7 @@ export function triggerDownload(dataOrUri: Uint8Array | URI, name: string): void
 	setTimeout(() => document.body.removeChild(anchor));
 }
 
-export function triggerUpload(): Promise<FileList | undefined> {
+export function triggerUpload(multiple = true): Promise<FileList | undefined> {
 	return new Promise<FileList | undefined>(resolve => {
 
 		// In order to upload to the browser, create a
@@ -1328,7 +1328,7 @@ export function triggerUpload(): Promise<FileList | undefined> {
 		const input = document.createElement('input');
 		document.body.appendChild(input);
 		input.type = 'file';
-		input.multiple = true;
+		input.multiple = multiple;
 
 		// Resolve once the input event has fired once
 		event.Event.once(event.Event.fromDOMEventEmitter(input, 'input'))(() => {

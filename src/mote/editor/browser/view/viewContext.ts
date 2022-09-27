@@ -1,12 +1,16 @@
 import { ViewController } from 'mote/editor/browser/view/viewController';
 import RecordStore from 'mote/platform/store/common/recordStore';
 import { ViewEventHandler } from 'mote/editor/common/viewEventHandler';
+import { IEditorConfiguration } from 'mote/editor/common/config/editorConfiguration';
+import { ViewLayout } from 'mote/editor/common/viewLayout/viewLayout';
 
 export class ViewContext {
 
 	constructor(
+		public readonly configuration: IEditorConfiguration,
 		public readonly contentStore: RecordStore,
-		private readonly controller: ViewController
+		public readonly viewLayout: ViewLayout,
+		public readonly controller: ViewController
 	) {
 
 	}

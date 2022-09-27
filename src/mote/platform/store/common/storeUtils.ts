@@ -89,7 +89,7 @@ export class StoreUtils {
 					}
 				}
 
-				persistedStore.store(key, JSON.stringify(recordWithRole), StorageScope.WORKSPACE, StorageTarget.USER);
+				persistedStore.store(key, JSON.stringify(recordWithRole), StorageScope.WORKSPACE, StorageTarget.MACHINE);
 			}
 		}
 		if (!recordWithRole) {

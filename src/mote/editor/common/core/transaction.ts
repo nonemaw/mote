@@ -6,6 +6,7 @@ import RecordStore from 'mote/platform/store/common/recordStore';
 import { Role } from 'mote/platform/store/common/record';
 import { StoreUtils } from 'mote/platform/store/common/storeUtils';
 import { StoreStorageProvider } from 'mote/platform/store/common/storeStorageProvider';
+import { isGuestUser, isLocalUser } from 'mote/platform/user/common/user';
 
 
 export interface TransactionCallback {
@@ -42,7 +43,7 @@ export class Transaction {
 
 	private constructor(userId: string) {
 		this.userId = userId;
-		this.isLocal = userId === 'local';
+		this.isLocal = isLocalUser(userId) || isGuestUser(userId);
 	}
 
 	done(args?: any) {
