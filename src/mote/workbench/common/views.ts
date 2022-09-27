@@ -1,12 +1,20 @@
+import { registerIcon } from 'mote/platform/theme/common/iconRegistry';
+import { ThemeIcon } from 'mote/platform/theme/common/themeService';
 import { flatten } from "vs/base/common/arrays";
 import { SetMap } from "vs/base/common/collections";
 import { Emitter, Event } from "vs/base/common/event";
 import { Disposable, IDisposable, toDisposable } from "vs/base/common/lifecycle";
 import { getOrSet } from "vs/base/common/map";
+import { URI } from 'vs/base/common/uri';
+import { localize } from 'vs/nls';
 import { SyncDescriptor } from "vs/platform/instantiation/common/descriptors";
 import { createDecorator } from "vs/platform/instantiation/common/instantiation";
 import { Registry } from "vs/platform/registry/common/platform";
 import { IPaneComposite } from "./panecomposite";
+import { Codicon } from 'vs/base/common/codicons';
+
+export const defaultViewIcon = registerIcon('default-view-icon', Codicon.window, localize('defaultViewIcon', 'Default view icon.'));
+
 
 export namespace Extensions {
 	export const ViewContainersRegistry = 'workbench.registry.view.containers';
@@ -18,6 +26,9 @@ export const enum ViewContainerLocation {
 	Panel,
 	AuxiliaryBar
 }
+
+export const ViewContainerLocations = [ViewContainerLocation.Sidebar,/*ViewContainerLocation.Panel, ViewContainerLocation.AuxiliaryBar*/];
+
 
 export function ViewContainerLocationToString(viewContainerLocation: ViewContainerLocation) {
 	switch (viewContainerLocation) {
@@ -54,7 +65,7 @@ export interface IViewContainerDescriptor {
 	/**
 	 * Icon representation of the View container
 	 */
-	//readonly icon?: ThemeIcon | URI;
+	readonly icon?: ThemeIcon | URI;
 
 	/**
 	 * Order of the view container.
@@ -88,7 +99,7 @@ export interface IViewContainerDescriptor {
 	/**
 	 * Id of the extension that contributed the view container
 	 */
-	//readonly extensionId?: ExtensionIdentifier;
+	readonly extensionId?: any;
 
 	readonly alwaysUseContainerInfo?: boolean;
 
@@ -287,7 +298,7 @@ export interface IViewDescriptor {
 
 	readonly ctorDescriptor: SyncDescriptor<IView>;
 
-	//readonly when?: ContextKeyExpression;
+	readonly when?: any;
 
 	readonly order?: number;
 
@@ -299,7 +310,7 @@ export interface IViewDescriptor {
 
 	readonly canMoveView?: boolean;
 
-	//readonly containerIcon?: ThemeIcon | URI;
+	readonly containerIcon?: ThemeIcon | URI;
 
 	readonly containerTitle?: string;
 
@@ -362,7 +373,7 @@ export interface IViewContainerModel {
 	readonly viewContainer: ViewContainer;
 
 	readonly title: string;
-	//readonly icon: ThemeIcon | URI | undefined;
+	readonly icon: ThemeIcon | URI | undefined;
 	readonly keybindingId: string | undefined;
 	readonly onDidChangeContainerInfo: Event<{ title?: boolean; icon?: boolean; keybindingId?: boolean }>;
 
@@ -564,6 +575,7 @@ export interface IViewDescriptorService {
 
 	getDefaultViewContainer(location: ViewContainerLocation): ViewContainer | undefined;
 	getViewContainerById(id: string): ViewContainer | null;
+	isViewContainerRemovedPermanently(id: string): boolean;
 	getViewContainerLocation(viewContainer: ViewContainer): ViewContainerLocation | null;
 	getViewContainersByLocation(location: ViewContainerLocation): ViewContainer[];
 	getViewContainerModel(viewContainer: ViewContainer): IViewContainerModel;

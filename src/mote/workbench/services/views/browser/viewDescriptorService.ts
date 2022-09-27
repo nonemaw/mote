@@ -271,6 +271,10 @@ export class ViewDescriptorService extends Disposable implements IViewDescriptor
 			};
 		}));
 	}
+
+	isViewContainerRemovedPermanently(viewContainerId: string): boolean {
+		return this.isGeneratedContainerId(viewContainerId) && !this.cachedViewContainerInfo.has(viewContainerId);
+	}
 }
 
 registerSingleton(IViewDescriptorService, ViewDescriptorService);

@@ -1,11 +1,11 @@
 /* eslint-disable code-no-unexternalized-strings */
 import 'mote/workbench/browser/style';
-import { getSingletonServiceDescriptors } from "vs/platform/instantiation/common/extensions";
-import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
-import { InstantiationService } from "vs/platform/instantiation/common/instantiationService";
-import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
-import { ILogService } from "vs/platform/log/common/log";
-import { IWorkbenchLayoutService, Parts } from "mote/workbench/services/layout/browser/layoutService";
+import { getSingletonServiceDescriptors } from 'vs/platform/instantiation/common/extensions';
+import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import { InstantiationService } from 'vs/platform/instantiation/common/instantiationService';
+import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
+import { ILogService } from 'vs/platform/log/common/log';
+import { IWorkbenchLayoutService, Parts } from 'mote/workbench/services/layout/browser/layoutService';
 import { Layout } from "./layout";
 import { onUnexpectedError } from "vs/base/common/errors";
 import { IViewsService } from "../common/views";
@@ -36,6 +36,7 @@ export class Workbench extends Layout {
 				// Init the logService at first
 				this.logService = accessor.get(ILogService);
 
+				// TODO: fixme
 				accessor.get(IViewsService);
 
 				// Layout

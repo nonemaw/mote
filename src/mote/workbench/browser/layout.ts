@@ -1,6 +1,6 @@
 /* eslint-disable code-no-unexternalized-strings */
 import { Disposable, DisposableStore } from 'vs/base/common/lifecycle';
-import { IWorkbenchLayoutService, Parts } from "mote/workbench/services/layout/browser/layoutService";
+import { IWorkbenchLayoutService, Parts, Position } from "mote/workbench/services/layout/browser/layoutService";
 import { Dimension, getClientArea, IDimension, isAncestorUsingFlowTo, position, size } from "vs/base/browser/dom";
 import { Part } from "./part";
 import { Emitter } from "vs/base/common/event";
@@ -114,7 +114,7 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 		if (this.initialized) {
 			switch (part) {
 				case Parts.SIDEBAR_PART:
-					return true;
+					return this.workbenchGrid.isViewVisible(this.sideBarPartView);
 			}
 		}
 		return true;
@@ -125,6 +125,11 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 			case Parts.SIDEBAR_PART:
 				return this.setSideBarHidden(hidden);
 		}
+	}
+
+	getSideBarPosition(): Position {
+		//return this.stateModel.getRuntimeValue(LayoutStateKeys.SIDEBAR_POSITON);
+		return Position.LEFT;
 	}
 
 	protected initLayout(accessor: ServicesAccessor): void {
@@ -409,6 +414,7 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 		if (hidden && this.paneCompositeService.getActivePaneComposite(ViewContainerLocation.Sidebar)) {
 			this.paneCompositeService.hideActivePaneComposite(ViewContainerLocation.Sidebar);
 
+			/* TODO fixme
 			// Pass Focus to Editor or Panel if Sidebar is now hidden
 			const activePanel = this.paneCompositeService.getActivePaneComposite(ViewContainerLocation.Panel);
 			if (this.hasFocus(Parts.PANEL_PART) && activePanel) {
@@ -416,6 +422,7 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 			} else {
 				this.focus();
 			}
+			*/
 		}
 
 		// Propagate to grid

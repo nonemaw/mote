@@ -1,9 +1,10 @@
+import { Event } from 'vs/base/common/event';
 import { ActivitybarPart } from 'mote/workbench/browser/parts/activitybar/activitybarPart';
 import { IPaneComposite } from 'mote/workbench/common/panecomposite';
-import { ViewContainerLocation } from 'mote/workbench/common/views';
+import { ViewContainerLocation, ViewContainerLocations } from 'mote/workbench/common/views';
 import { IBadge } from 'mote/workbench/services/activity/common/activity';
 import { IPaneCompositePartService } from 'mote/workbench/services/panecomposite/browser/panecomposite';
-import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, DisposableStore, IDisposable } from 'vs/base/common/lifecycle';
 import { assertIsDefined } from 'vs/base/common/types';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -12,6 +13,9 @@ import { PaneCompositeDescriptor } from 'mote/workbench/browser/panecomposite';
 import { SidebarPart } from 'mote/workbench/browser/parts/sidebar/sidebarPart';
 
 export interface IPaneCompositePart {
+
+	readonly onDidPaneCompositeOpen: Event<IPaneComposite>;
+	readonly onDidPaneCompositeClose: Event<IPaneComposite>;
 
 	/**
 	 * Opens a viewlet with the given identifier and pass keyboard focus to it if specified.
@@ -64,6 +68,9 @@ export interface IPaneCompositeSelectorPart {
 export class PaneCompositeParts extends Disposable implements IPaneCompositePartService {
 	declare readonly _serviceBrand: undefined;
 
+	onDidPaneCompositeOpen: Event<{ composite: IPaneComposite; viewContainerLocation: ViewContainerLocation }>;
+	onDidPaneCompositeClose: Event<{ composite: IPaneComposite; viewContainerLocation: ViewContainerLocation }>;
+
 	private paneCompositeParts = new Map<ViewContainerLocation, IPaneCompositePart>();
 	private paneCompositeSelectorParts = new Map<ViewContainerLocation, IPaneCompositeSelectorPart>();
 
@@ -79,6 +86,10 @@ export class PaneCompositeParts extends Disposable implements IPaneCompositePart
 		this.paneCompositeParts.set(ViewContainerLocation.Sidebar, sideBarPart);
 
 		this.paneCompositeSelectorParts.set(ViewContainerLocation.Sidebar, activityBarPart);
+
+		const eventDisposables = this._register(new DisposableStore());
+		this.onDidPaneCompositeOpen = Event.any(...ViewContainerLocations.map(loc => Event.map(this.paneCompositeParts.get(loc)!.onDidPaneCompositeOpen, composite => { return { composite, viewContainerLocation: loc }; }, eventDisposables)));
+		this.onDidPaneCompositeClose = Event.any(...ViewContainerLocations.map(loc => Event.map(this.paneCompositeParts.get(loc)!.onDidPaneCompositeClose, composite => { return { composite, viewContainerLocation: loc }; }, eventDisposables)));
 	}
 
 	openPaneComposite(id: string | undefined, viewContainerLocation: ViewContainerLocation, focus?: boolean): Promise<IPaneComposite | undefined> {

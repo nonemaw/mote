@@ -34,6 +34,8 @@ export class WorkspacesController extends BrowserContextViewBasedService {
 		container.style.display = 'flex';
 		container.style.cursor = 'pointer';
 
+		clearNode(container);
+
 		this.headerView = new WorkspaceHeaderView(themeService);
 		this.headerView.create(container, this.getTitle());
 

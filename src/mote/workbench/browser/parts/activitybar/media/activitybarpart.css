@@ -1,0 +1,65 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.workbench .part.activitybar {
+	width: 48px;
+	height: 100%;
+}
+
+.workbench .activitybar.bordered::before {
+	content: '';
+	float: left;
+	position: absolute;
+	box-sizing: border-box;
+	height: 100%;
+	width: 0px;
+	border-color: inherit;
+}
+
+.workbench .activitybar.left.bordered::before {
+	right: 0;
+	border-right-style: solid;
+	border-right-width: 1px;
+}
+
+.workbench .activitybar.right.bordered::before {
+	left: 0;
+	border-left-style: solid;
+	border-left-width: 1px;
+}
+
+.workbench .activitybar > .content {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+/** Viewlet Switcher */
+
+.workbench .activitybar > .content .monaco-action-bar {
+	text-align: left;
+	background-color: inherit;
+}
+
+.workbench .activitybar .action-item:focus {
+	outline: 0 !important; /* activity bar indicates focus custom */
+}
+
+.workbench .activitybar > .content > .composite-bar {
+	margin-bottom: auto;
+}
+
+/** Menu Bar */
+
+.workbench .activitybar .menubar {
+	width: 100%;
+	height: 35px;
+}
+
+.workbench .activitybar .menubar.compact .toolbar-toggle-more {
+	width: 100%;
+	height: 35px;
+}
