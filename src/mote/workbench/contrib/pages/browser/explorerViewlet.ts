@@ -16,6 +16,11 @@ import { ExplorerView } from './views/explorerView';
 import { IWorkspaceContextService } from 'mote/platform/workspace/common/workspace';
 import { IContextViewService } from 'mote/platform/contextview/browser/contextView';
 import { WorkspacesController } from 'mote/workbench/contrib/pages/browser/views/workspacesController';
+import { registerIcon } from 'mote/platform/theme/common/iconRegistry';
+import { Codicon } from 'vs/base/common/codicons';
+
+const explorerViewIcon = registerIcon('explorer-view-icon', Codicon.files, localize('explorerViewIcon', 'View icon of the explorer view.'));
+
 
 const viewsRegistry = Registry.as<IViewsRegistry>(Extensions.ViewsRegistry);
 const viewContainerRegistry = Registry.as<IViewContainersRegistry>(Extensions.ViewContainersRegistry);
@@ -124,5 +129,6 @@ export class ExplorerViewletViewsContribution extends Disposable implements IWor
 export const EXPLORER_VIEW_CONTAINER: ViewContainer = viewContainerRegistry.registerViewContainer({
 	id: FILES_VIEWLET_ID,
 	title: localize('workspace', "Workspace"),
+	icon: explorerViewIcon,
 	ctorDescriptor: new SyncDescriptor(ExplorerViewPaneContainer),
 }, ViewContainerLocation.Sidebar, { isDefault: true });

@@ -1,7 +1,10 @@
 /* eslint-disable code-no-unexternalized-strings */
-import { IAddedViewDescriptorRef, IAddedViewDescriptorState, IViewContainerModel, IViewDescriptor, IViewDescriptorRef, ViewContainer } from "mote/workbench/common/views";
+import { ThemeIcon } from 'mote/platform/theme/common/themeService';
+import { defaultViewIcon, IAddedViewDescriptorRef, IAddedViewDescriptorState, IViewContainerModel, IViewDescriptor, IViewDescriptorRef, ViewContainer } from "mote/workbench/common/views";
 import { Emitter, Event } from "vs/base/common/event";
 import { Disposable } from "vs/base/common/lifecycle";
+import { isEqual } from 'vs/base/common/resources';
+import { URI } from 'vs/base/common/uri';
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 
 interface IViewDescriptorState {
@@ -30,6 +33,9 @@ export class ViewContainerModel extends Disposable implements IViewContainerMode
 	// Container Info
 	private _title!: string;
 	get title(): string { return this._title; }
+
+	private _icon: URI | ThemeIcon | undefined;
+	get icon(): URI | ThemeIcon | undefined { return this._icon; }
 
 	private _keybindingId: string | undefined;
 	get keybindingId(): string | undefined { return this._keybindingId; }
@@ -67,8 +73,38 @@ export class ViewContainerModel extends Disposable implements IViewContainerMode
 		super();
 
 		//this.viewDescriptorsState = this._register(instantiationService.createInstance(ViewDescriptorsState, viewContainer.storageId || `${viewContainer.id}.state`, viewContainer.title));
-
+		this.updateContainerInfo();
 	}
+
+	private updateContainerInfo(): void {
+		/* Use default container info if one of the visible view descriptors belongs to the current container by default */
+		const useDefaultContainerInfo = this.viewContainer.alwaysUseContainerInfo || this.visibleViewDescriptors.length === 0 || this.visibleViewDescriptors.some(v => Registry.as<IViewsRegistry>(ViewExtensions.ViewsRegistry).getViewContainer(v.id) === this.viewContainer);
+		const title = useDefaultContainerInfo ? this.viewContainer.title : this.visibleViewDescriptors[0]?.containerTitle || this.visibleViewDescriptors[0]?.name || '';
+
+		let titleChanged: boolean = false;
+		if (this._title !== title) {
+			this._title = title;
+			titleChanged = true;
+		}
+
+		const icon = useDefaultContainerInfo ? this.viewContainer.icon : this.visibleViewDescriptors[0]?.containerIcon || defaultViewIcon;
+		let iconChanged: boolean = false;
+		if (!this.isEqualIcon(icon)) {
+			this._icon = icon;
+			iconChanged = true;
+		}
+	}
+
+	private isEqualIcon(icon: URI | ThemeIcon | undefined): boolean {
+		if (URI.isUri(icon)) {
+			return URI.isUri(this._icon) && isEqual(icon, this._icon);
+		} else if (ThemeIcon.isThemeIcon(icon)) {
+			return ThemeIcon.isThemeIcon(this._icon) && ThemeIcon.isEqual(icon, this._icon);
+		}
+		return icon === this._icon;
+	}
+
+
 	isCollapsed(id: string): boolean {
 		return !!this.find(id).viewDescriptorItem.state.collapsed;
 	}

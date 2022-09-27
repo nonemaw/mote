@@ -1,6 +1,6 @@
 /* eslint-disable code-no-unexternalized-strings */
 import { Disposable, DisposableStore } from 'vs/base/common/lifecycle';
-import { IWorkbenchLayoutService, Parts } from "mote/workbench/services/layout/browser/layoutService";
+import { IWorkbenchLayoutService, Parts, Position } from "mote/workbench/services/layout/browser/layoutService";
 import { Dimension, getClientArea, IDimension, isAncestorUsingFlowTo, position, size } from "vs/base/browser/dom";
 import { Part } from "./part";
 import { Emitter } from "vs/base/common/event";
@@ -86,6 +86,8 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 	private initialized = false;
 	private workbenchGrid!: SerializableGrid<ISerializableView>;
 
+	private activityBarPartView!: ISerializableView;
+
 	protected logService!: ILogService;
 
 	private sideBarPartView!: ISerializableView;
@@ -112,7 +114,7 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 		if (this.initialized) {
 			switch (part) {
 				case Parts.SIDEBAR_PART:
-					return true;
+					return this.workbenchGrid.isViewVisible(this.sideBarPartView);
 			}
 		}
 		return true;
@@ -123,6 +125,11 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 			case Parts.SIDEBAR_PART:
 				return this.setSideBarHidden(hidden);
 		}
+	}
+
+	getSideBarPosition(): Position {
+		//return this.stateModel.getRuntimeValue(LayoutStateKeys.SIDEBAR_POSITON);
+		return Position.LEFT;
 	}
 
 	protected initLayout(accessor: ServicesAccessor): void {
@@ -200,11 +207,15 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 	protected createWorkbenchLayout(): void {
 		const sideBar = this.getPart(Parts.SIDEBAR_PART);
 		const editorPart = this.getPart(Parts.EDITOR_PART);
+		const activityBar = this.getPart(Parts.ACTIVITYBAR_PART);
+
+		this.activityBarPartView = activityBar;
 
 		// View references for all parts
 		this.sideBarPartView = sideBar;
 
 		const viewMap: { [key: string]: Part } = {
+			[Parts.ACTIVITYBAR_PART]: activityBar,
 			[Parts.SIDEBAR_PART]: sideBar,
 			[Parts.EDITOR_PART]: editorPart,
 		};
@@ -326,6 +337,14 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 
 		const titleBarHeight = 0;
 		const middleSectionHeight = height - titleBarHeight;
+		const activityBarWidth = this.activityBarPartView.minimumWidth;
+
+		const activityBarNode: ISerializedLeafNode = {
+			type: 'leaf',
+			data: { type: Parts.ACTIVITYBAR_PART },
+			size: activityBarWidth,
+			visible: true,
+		};
 
 		const sideBarNode: ISerializedLeafNode = {
 			type: 'leaf',
@@ -341,8 +360,7 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 			visible: true
 		};
 
-
-		const middleSection: ISerializedNode[] = [sideBarNode, editorNode];
+		const middleSection: ISerializedNode[] = [activityBarNode, sideBarNode, editorNode];
 
 		const result: ISerializedGrid = {
 			root: {
@@ -396,6 +414,7 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 		if (hidden && this.paneCompositeService.getActivePaneComposite(ViewContainerLocation.Sidebar)) {
 			this.paneCompositeService.hideActivePaneComposite(ViewContainerLocation.Sidebar);
 
+			/* TODO fixme
 			// Pass Focus to Editor or Panel if Sidebar is now hidden
 			const activePanel = this.paneCompositeService.getActivePaneComposite(ViewContainerLocation.Panel);
 			if (this.hasFocus(Parts.PANEL_PART) && activePanel) {
@@ -403,6 +422,7 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 			} else {
 				this.focus();
 			}
+			*/
 		}
 
 		// Propagate to grid

@@ -1,3 +1,4 @@
+import { Event } from 'vs/base/common/event';
 import { IThemeService } from 'mote/platform/theme/common/themeService';
 import { IWorkspaceContextService } from 'mote/platform/workspace/common/workspace';
 import { PaneComposite, PaneCompositeDescriptor, PaneCompositeExtensions, PaneCompositeRegistry } from 'mote/workbench/browser/panecomposite';
@@ -12,9 +13,6 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { Registry } from 'vs/platform/registry/common/platform';
 
 export class SidebarPart extends CompositePart<PaneComposite> implements IPaneCompositePart {
-	toJSON(): object {
-		throw new Error('Method not implemented.');
-	}
 
 	declare readonly _serviceBrand: undefined;
 
@@ -23,6 +21,10 @@ export class SidebarPart extends CompositePart<PaneComposite> implements IPaneCo
 	readonly maximumWidth: number = 450;
 	readonly minimumHeight: number = 0;
 	readonly maximumHeight: number = Number.POSITIVE_INFINITY;
+
+	get onDidPaneCompositeOpen(): Event<IPaneComposite> { return Event.map(this.onDidCompositeOpen.event, compositeEvent => <IPaneComposite>compositeEvent.composite); }
+	get onDidPaneCompositeClose(): Event<IPaneComposite> { return this.onDidCompositeClose.event as Event<IPaneComposite>; }
+
 
 	private readonly viewletRegistry = Registry.as<PaneCompositeRegistry>(PaneCompositeExtensions.Viewlets);
 
@@ -58,6 +60,14 @@ export class SidebarPart extends CompositePart<PaneComposite> implements IPaneCo
 		// Part container
 		const container = assertIsDefined(this.getContainer());
 		container.style.backgroundColor = this.getColor(SIDE_BAR_BACKGROUND) || '';
+	}
+
+	override layout(width: number, height: number, top: number, left: number): void {
+		if (!this.layoutService.isVisible(Parts.SIDEBAR_PART)) {
+			return;
+		}
+
+		super.layout(width, height, top, left);
 	}
 
 	async openPaneComposite(id: string | undefined, focus?: boolean): Promise<IPaneComposite | undefined> {
@@ -114,6 +124,14 @@ export class SidebarPart extends CompositePart<PaneComposite> implements IPaneCo
 
 			return v1.order - v2.order;
 		});
+	}
+
+	//#endregion
+
+	toJSON(): object {
+		return {
+			type: Parts.SIDEBAR_PART
+		};
 	}
 
 	hideActivePaneComposite(): void {

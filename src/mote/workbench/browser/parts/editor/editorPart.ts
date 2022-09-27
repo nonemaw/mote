@@ -21,10 +21,6 @@ import { editorBackground } from 'mote/platform/theme/common/themeColors';
 
 export class EditorPart extends Part implements IEditorService {
 
-	toJSON(): object {
-		throw new Error('Method not implemented.');
-	}
-
 	declare readonly _serviceBrand: undefined;
 
 	get minimumWidth(): number {
@@ -131,6 +127,12 @@ export class EditorPart extends Part implements IEditorService {
 
 	private doLayout(dimension: Dimension, top: number, left: number): void {
 		this.editorPanes.layout(dimension);
+	}
+
+	toJSON(): object {
+		return {
+			type: Parts.EDITOR_PART
+		};
 	}
 }
 

@@ -19,6 +19,10 @@ export const regularDividerColor = colorRegistry.registerColor('divider.regular.
 export const darkDividerColor = colorRegistry.registerColor('divider.dark.color', { light: '', dark: '' }, '');
 export const contrastBorder = registerColor('contrastBorder', { light: null, dark: null, hcDark: '#6FC3DF', hcLight: '#0F4A85' }, nls.localize('contrastBorder', "An extra border around elements to separate them from others for greater contrast."));
 
+/**
+ * Editor foreground color.
+ */
+export const editorForeground = registerColor('editor.foreground', { light: '#333333', dark: '#BBBBBB', hcDark: Color.white, hcLight: foreground }, nls.localize('editorForeground', "Editor default foreground color."));
 
 export const sidebarBackground = colorRegistry.registerColor('sidebarBackground', { ...ThemedStyles.sidebarBackground }, 'sidebarBackground');
 
