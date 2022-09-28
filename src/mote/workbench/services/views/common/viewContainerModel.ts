@@ -1,11 +1,12 @@
 /* eslint-disable code-no-unexternalized-strings */
 import { ThemeIcon } from 'mote/platform/theme/common/themeService';
-import { defaultViewIcon, IAddedViewDescriptorRef, IAddedViewDescriptorState, IViewContainerModel, IViewDescriptor, IViewDescriptorRef, ViewContainer } from "mote/workbench/common/views";
+import { defaultViewIcon, Extensions as ViewExtensions, IAddedViewDescriptorRef, IAddedViewDescriptorState, IViewContainerModel, IViewDescriptor, IViewDescriptorRef, IViewsRegistry, ViewContainer } from "mote/workbench/common/views";
 import { Emitter, Event } from "vs/base/common/event";
 import { Disposable } from "vs/base/common/lifecycle";
 import { isEqual } from 'vs/base/common/resources';
 import { URI } from 'vs/base/common/uri';
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
+import { Registry } from 'vs/platform/registry/common/platform';
 
 interface IViewDescriptorState {
 	visibleGlobal: boolean | undefined;

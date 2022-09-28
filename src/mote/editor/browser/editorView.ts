@@ -144,6 +144,12 @@ export class EditorView extends ViewEventHandler {
 		this.scheduleRender();
 	}
 
+	public override onConfigurationChanged(e: viewEvents.ViewConfigurationChangedEvent): boolean {
+		//this.domNode.setClassName(this._getEditorClassName());
+		this.applyLayout();
+		return false;
+	}
+
 	//#endregion
 
 	public render(now: boolean, everything: boolean): void {
