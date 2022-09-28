@@ -9,6 +9,10 @@ body {
 	-webkit-user-select: none;
 }
 
+body.web {
+	position: fixed; /* prevent bounce effect */
+}
+
 *, *:focus {
     outline: 0;
 }

@@ -19,6 +19,9 @@ export class ViewLines extends ViewPart implements IVisibleLinesHost<ViewLine> {
 	private readonly viewController: ViewController;
 	private lines: ViewLine[] = [];
 
+	// config
+	private canUseLayerHinting: boolean = true;
+
 	constructor(
 		context: ViewContext,
 
@@ -86,6 +89,8 @@ export class ViewLines extends ViewPart implements IVisibleLinesHost<ViewLine> {
 		//  - it might change `scrollWidth` and `scrollLeft`
 
 		// (3) handle scrolling
+		this.linesContent.setLayerHinting(this.canUseLayerHinting);
+		this.linesContent.setContain('strict');
 		const adjustedScrollTop = this.context.viewLayout.getCurrentScrollTop();
 		this.linesContent.setTop(-adjustedScrollTop);
 

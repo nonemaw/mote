@@ -12,6 +12,9 @@ import { IViewsService } from "../common/views";
 import { Registry } from "vs/platform/registry/common/platform";
 import { IWorkbenchContributionsRegistry, WorkbenchExtensions } from "mote/workbench/common/contributions";
 import { IWorkbenchOptions } from 'vs/workbench/browser/workbench';
+import { isLinux, isWeb, isWindows } from 'vs/base/common/platform';
+import { coalesce } from 'vs/base/common/arrays';
+import { isChrome, isFirefox, isSafari } from 'vs/base/browser/browser';
 
 export class Workbench extends Layout {
 
@@ -95,6 +98,24 @@ export class Workbench extends Layout {
 	}
 
 	private renderWorkbench(instantiationService: IInstantiationService) {
+
+		// State specific classes
+		const platformClass = isWindows ? 'windows' : isLinux ? 'linux' : 'mac';
+		const workbenchClasses = coalesce([
+			'workbench',
+			platformClass,
+			isWeb ? 'web' : undefined,
+			isChrome ? 'chromium' : isFirefox ? 'firefox' : isSafari ? 'safari' : undefined,
+			...[],
+			...([])
+		]);
+
+		this.container.classList.add(...workbenchClasses);
+		document.body.classList.add(platformClass); // used by our fonts
+
+		if (isWeb) {
+			document.body.classList.add('web');
+		}
 
 		// Create Parts
 		[
