@@ -120,10 +120,12 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 		return true;
 	}
 
-	setPartHidden(hidden: boolean, part: Parts.SIDEBAR_PART | Parts.EDITOR_PART): void {
+	setPartHidden(hidden: boolean, part: Parts.SIDEBAR_PART | Parts.EDITOR_PART | Parts.ACTIVITYBAR_PART): void {
 		switch (part) {
 			case Parts.SIDEBAR_PART:
 				return this.setSideBarHidden(hidden);
+			case Parts.ACTIVITYBAR_PART:
+				return this.setActivityBarHidden(hidden);
 		}
 	}
 
@@ -304,6 +306,7 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 			//await restoreDefaultViewsPromise;
 			if (!this.windowState.initialization.views.containerToRestore.sideBar) {
 				this.setSideBarHidden(true, true);
+				this.setActivityBarHidden(true);
 				return;
 			}
 
@@ -399,6 +402,12 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 		}
 
 		return this.getPart(part).getContainer();
+	}
+
+	private setActivityBarHidden(hidden: boolean, skipLayout?: boolean): void {
+		// Propagate to grid
+		//this.stateModel.setRuntimeValue(LayoutStateKeys.ACTIVITYBAR_HIDDEN, hidden);
+		this.workbenchGrid.setViewVisible(this.activityBarPartView, !hidden);
 	}
 
 	private setSideBarHidden(hidden: boolean, skipLayout?: boolean) {
