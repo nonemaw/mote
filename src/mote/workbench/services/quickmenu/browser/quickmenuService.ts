@@ -2,7 +2,6 @@ import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IQuickMenuDelegate, IQuickMenuService } from './quickmenu';
 import { RangeUtils } from 'mote/editor/common/core/rangeUtils';
 import { IAction } from 'vs/base/common/actions';
-import { BrowserContextViewBasedService } from 'mote/platform/contextview/browser/contextViewBasedService';
 import { IMenuOptions } from 'vs/base/browser/ui/menu/menu';
 import { IMenuLike } from 'mote/base/browser/ui/menu/menu';
 import { QuickMenu, QuickMenuHeight } from 'mote/base/browser/ui/menu/quickMenu';
@@ -12,13 +11,16 @@ import { IHoverDelegate, IHoverDelegateOptions, IHoverDelegateTarget } from 'vs/
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ContextViewService } from 'mote/platform/contextview/browser/contextViewService';
 import { HoverPosition } from 'vs/base/browser/ui/hover/hoverWidget';
+import { ContextViewHelper } from 'mote/platform/contextview/browser/contextViewHelper';
 
 
-export class QuickMenuService extends BrowserContextViewBasedService implements IQuickMenuService {
+export class QuickMenuService implements IQuickMenuService {
 
 	declare readonly _serviceBrand: undefined;
 
 	private hoverDelegate: IHoverDelegate;
+
+	private contextViewHelper: ContextViewHelper;
 
 	constructor(
 		@IThemeService themeService: IThemeService,
@@ -29,7 +31,8 @@ export class QuickMenuService extends BrowserContextViewBasedService implements 
 		// ContextViewService just allowed to show one context view in same time.
 		// It's why we need to create a self owned contextViewService
 		const contextViewService = instantiationService.createInstance(ContextViewService);
-		super(themeService, contextViewService);
+
+		this.contextViewHelper = new ContextViewHelper(contextViewService, themeService);
 
 		this.hoverDelegate = new class implements IHoverDelegate {
 
@@ -74,8 +77,14 @@ export class QuickMenuService extends BrowserContextViewBasedService implements 
 	}
 
 	showQuickMenu(delegate: IQuickMenuDelegate): void {
-		this.configure({ blockMouse: false });
-		this.showContextMenu({ ...delegate, getAnchor: () => this.getAnchor() });
+		this.contextViewHelper.showContextView({
+			getAnchor: () => this.getAnchor(),
+			getWidget: (parent) => {
+				const widget = this.createMenu(parent, delegate.getActions(), {});
+				return widget;
+			},
+			debug: false,
+		});
 	}
 
 	private getAnchor() {

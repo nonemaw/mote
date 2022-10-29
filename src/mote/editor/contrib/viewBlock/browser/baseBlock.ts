@@ -1,8 +1,9 @@
 import { CSSProperties } from 'mote/base/browser/jsx/style';
 import { EditableHandler, EditableHandlerOptions } from 'mote/editor/browser/controller/editableHandler';
+import { renderSegments } from 'mote/editor/browser/textRenderer';
 import { ViewContext } from 'mote/editor/browser/view/viewContext';
 import { ViewController } from 'mote/editor/browser/view/viewController';
-import { segmentsToElement } from 'mote/editor/common/textSerialize';
+import { Segment } from 'mote/editor/common/segment';
 import BlockStore from 'mote/platform/store/common/blockStore';
 import { lightTextColor } from 'mote/platform/theme/common/themeColors';
 import { IThemeService, Themable } from 'mote/platform/theme/common/themeService';
@@ -40,7 +41,8 @@ export abstract class BaseBlock extends Themable {
 	}
 
 	setValue(store: BlockStore) {
-		const html = segmentsToElement(store.getTitleStore().getValue()).join('');
+		const segments = store.getTitleStore().getValue();
+		const html = renderSegments(segments.map(Segment.from)).join('');
 		this.editableHandler.setValue(html);
 		this.editableHandler.setEnabled(store.canEdit());
 	}
