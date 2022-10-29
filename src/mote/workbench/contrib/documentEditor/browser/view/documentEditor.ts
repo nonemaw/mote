@@ -78,6 +78,15 @@ export class DocumentEditor extends EditorPane {
 		const control = assertIsDefined(this.editorControl);
 		const actions: IAction[] = [];
 		actions.push({
+			id: 'quick.link',
+			label: 'Link',
+			tooltip: 'Add link',
+			run: () => control.trigger('quickmenu', 'decorate', ['a', 'https://moteapp.io/page/b95227c3-e623-4b8c-a4a1-b843b139a4d1']),
+			enabled: true,
+			class: '',
+			dispose: () => { }
+		});
+		actions.push({
 			id: 'quick.bold',
 			label: 'B',
 			tooltip: 'Bold',

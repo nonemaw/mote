@@ -8,7 +8,7 @@ export const CLASS_TEXT_BUFFER = "caffeine-text-buffer";
 
 export function isNode(node?: Node | null) {
 	try {
-		return node && void 0 !== node.nodeType
+		return node && void 0 !== node.nodeType;
 	} catch (_) {
 		return false;
 	}

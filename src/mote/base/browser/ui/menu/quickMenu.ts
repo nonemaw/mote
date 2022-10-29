@@ -71,40 +71,13 @@ export class QuickMenu extends ActionBar implements IMenuLike {
 			actionRunner: options.actionRunner
 		});
 
+		menuElement.style.color = 'rgb(204, 204, 204)';
+		menuElement.style.backgroundColor = 'rgb(48, 48, 49)';
+		menuElement.style.boxShadow = 'rgb(0 0 0 / 36%) 0px 2px 8px';
+
 		const parentData: ISubMenuData = {
 			parent: this
 		};
-
-		/*
-		this._register(addDisposableListener(this.domNode, EventType.MOUSE_OUT, e => {
-			const relatedTarget = e.relatedTarget as HTMLElement;
-			if (!isAncestor(relatedTarget, this.domNode)) {
-				this.focusedItem = undefined;
-				this.updateFocus();
-				e.stopPropagation();
-			}
-		}));
-
-		this._register(addDisposableListener(this.actionsList, EventType.MOUSE_OVER, e => {
-			let target = e.target as HTMLElement;
-			if (!target || !isAncestor(target, this.actionsList) || target === this.actionsList) {
-				return;
-			}
-
-			while (target.parentElement !== this.actionsList && target.parentElement !== null) {
-				target = target.parentElement;
-			}
-
-			if (target.classList.contains('action-item')) {
-				const lastFocusedItem = this.focusedItem;
-				this.setFocusedItem(target);
-
-				if (lastFocusedItem !== this.focusedItem) {
-					this.updateFocus();
-				}
-			}
-		}));
-		*/
 
 		this.push(actions, { icon: true, label: true, isMenu: true });
 
